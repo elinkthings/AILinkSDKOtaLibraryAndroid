@@ -25,7 +25,11 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-
+    repositories {
+        flatDir {
+            dirs 'libs'
+        }
+    }
     sourceSets {
         main {
             jniLibs.srcDirs = ['libs']
@@ -33,11 +37,22 @@ android {
     }
 }
 
+def jarName="AILinkSDKOtaLibraryAndroid.jar"
+task makeJar(type: Jar) {
+    delete 'build/libs/'+jarName
+    from zipTree("build/intermediates/aar_main_jar/release/classes.jar")
+    from fileTree(dir: 'src/main/java') //需要保留的资源文件,源码等
+    archiveName = jarName
+    destinationDir = file('build/libs')
+}
+makeJar.dependsOn(build)
+
+
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
     implementation 'androidx.appcompat:appcompat:1.2.0'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
-
+    implementation 'com.github.elinkthings:AILinkSDKRepositoryAndroid:1.7.4'
 }

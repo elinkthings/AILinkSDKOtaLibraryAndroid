@@ -1,3 +1,2 @@
 include ':BleOtalibrary'
 include ':app'
-rootProject.name = "AILinkSDKOtaLibraryAndroid"
