@@ -1,11 +1,10 @@
 package com.elinkthings.bleotalibrary.netstrap;
 
 
-
-import androidx.annotation.Nullable;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import androidx.annotation.Nullable;
 
 public class NetstrapTask {
 

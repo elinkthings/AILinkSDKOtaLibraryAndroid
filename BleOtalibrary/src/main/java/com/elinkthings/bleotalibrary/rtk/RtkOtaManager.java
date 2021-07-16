@@ -155,7 +155,7 @@ public class RtkOtaManager {
     /**
      * 最后执行开始升级
      *
-     * @param otaType {@link DfuConstants.OTA_MODE_NORMAL_FUNCTION,DfuConstants.OTA_MODE_SILENT_FUNCTION,DfuConstants.OTA_MODE_SILENT_EXTEND_FLASH,DfuConstants.OTA_MODE_SILENT_NO_TEMP,DfuConstants.OTA_MODE_AUTOMATIC}
+     * @param otaType {@link DfuConstants.OTA_MODE_NORMAL_FUNCTION, DfuConstants.OTA_MODE_SILENT_FUNCTION, DfuConstants.OTA_MODE_SILENT_EXTEND_FLASH, DfuConstants.OTA_MODE_SILENT_NO_TEMP, DfuConstants.OTA_MODE_AUTOMATIC}
      */
     public void startOta(int otaType,int step) {
         mOtaType = otaType;

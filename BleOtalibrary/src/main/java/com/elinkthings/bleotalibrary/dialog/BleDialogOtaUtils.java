@@ -38,7 +38,7 @@ public class BleDialogOtaUtils {
         return new BleDialogOtaUtils(is);
     }
 
-    private BleDialogOtaUtils(InputStream inputStream) throws IOException {
+    public BleDialogOtaUtils(InputStream inputStream) throws IOException {
         this.inputStream = inputStream;
         this.bytesAvailable = this.inputStream.available();
         init();

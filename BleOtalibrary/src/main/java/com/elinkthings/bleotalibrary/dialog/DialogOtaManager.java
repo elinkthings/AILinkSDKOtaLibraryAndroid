@@ -7,14 +7,17 @@ import android.bluetooth.BluetoothGattService;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.elinkthings.bleotalibrary.listener.OnBleOTAListener;
 import com.pingwang.bluetoothlib.device.BleDevice;
 import com.pingwang.bluetoothlib.listener.OnCharacteristicListener;
+import com.pingwang.bluetoothlib.utils.BleLog;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -68,6 +71,7 @@ public class DialogOtaManager implements OnCharacteristicListener {
      */
     private boolean mVerifySupport = false;
     private String mFilePath = "";
+    private InputStream mInputStream;
     private int mIcType = IC_TYPE_585;
     private BleDevice mBleDevice;
 
@@ -77,7 +81,11 @@ public class DialogOtaManager implements OnCharacteristicListener {
         if (mBleDevice != null) {
             this.mBluetoothGatt = mBleDevice.getBluetoothGatt();
         }
+        if (mBluetoothGatt==null){
+            return;
+        }
         this.mFilePath = builder.mFilePath;
+        this.mInputStream = builder.mInputStream;
         this.mIcType = builder.mIcType;
         this.mOnBleOTAListener = builder.mOnBleOTAListener;
         initErrorMap();
@@ -105,6 +113,7 @@ public class DialogOtaManager implements OnCharacteristicListener {
         private BleDevice mBleDevice;
         private OnBleOTAListener mOnBleOTAListener;
         private String mFilePath = "";
+        private InputStream mInputStream = null;
         private int mIcType = IC_TYPE_585;
 
         public Builder() {
@@ -116,8 +125,13 @@ public class DialogOtaManager implements OnCharacteristicListener {
             return this;
         }
 
-        public Builder setFilePath(String filePath) {
+        public Builder setFile(String filePath) {
             mFilePath = filePath;
+            return this;
+        }
+
+        public Builder setFile(InputStream inputStream) {
+            mInputStream = inputStream;
             return this;
         }
 
@@ -145,13 +159,17 @@ public class DialogOtaManager implements OnCharacteristicListener {
      * 最后执行开始升级
      */
     public void startOta() {
-        this.startOta(mFilePath, mIcType);
+        if (mInputStream != null) {
+            this.startOta(mInputStream, mIcType);
+        } else {
+            this.startOta(mFilePath, mIcType);
+        }
     }
 
     /**
      * 初始化,开始OTA
      */
-    public void startOta(String fileName, int icType) {
+    private void startOta(String fileName, int icType) {
         if (!mVerifySupport || mBleDevice == null) {
             return;
         }
@@ -168,16 +186,54 @@ public class DialogOtaManager implements OnCharacteristicListener {
                 break;
         }
 
-        setFileName(fileName);
+        setFile(fileName);
+        SystemClock.sleep(100);
         setOtaMemDev();
 
     }
 
+    /**
+     * 初始化,开始OTA
+     */
+    public void startOta(InputStream inputStream, int icType) {
+        if (!mVerifySupport || mBleDevice == null) {
+            return;
+        }
+        mBleDevice.setOnCharacteristicListener(this);
+        switch (icType) {
+            case IC_TYPE_585:
+                init585();
+                break;
+            case IC_TYPE_531:
+                init531();
+                break;
+            case IC_TYPE_580:
+                init580();
+                break;
+        }
 
-    private void setFileName(String fileName) {
+        setFile(inputStream);
+        SystemClock.sleep(100);
+        setOtaMemDev();
+
+    }
+
+    private void setFile(String fileName) {
         try {
             if (!TextUtils.isEmpty(fileName)) {
                 fileUtils = BleDialogOtaUtils.getByFileName(fileName);
+                fileUtils.setFileBlockSize(240);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            onError(ERROR_READ_FILE);
+        }
+    }
+
+    private void setFile(InputStream inputStream) {
+        try {
+            if (inputStream != null) {
+                fileUtils = new BleDialogOtaUtils(inputStream);
                 fileUtils.setFileBlockSize(240);
             }
         } catch (IOException e) {
@@ -409,14 +465,14 @@ public class DialogOtaManager implements OnCharacteristicListener {
 
     private void init531() {
         MISO_GPIO = 0x03;
-        MOSI_GPIO = 0X00;
+        MOSI_GPIO = 0x00;
         CS_GPIO = 0x01;
         SCK_GPIO = 0x04;
     }
 
     private void init580() {
         MISO_GPIO = 0x05;
-        MOSI_GPIO = 0X06;
+        MOSI_GPIO = 0x06;
         CS_GPIO = 0x03;
         SCK_GPIO = 0x00;
     }
@@ -426,13 +482,16 @@ public class DialogOtaManager implements OnCharacteristicListener {
      * 写入OTA的升级包头//第一步
      */
     private void setOtaMemDev() {
+
         int memType = (MEMORY_TYPE_EXTERNAL_SPI << 24) | IMAGE_BANK;
         if (otaMemDevChara != null) {
             otaMemDevChara.setValue(memType, BluetoothGattCharacteristic.FORMAT_UINT32, 0);
-            boolean writeSuccess = mBluetoothGatt.writeCharacteristic(otaMemDevChara);
-            if (!writeSuccess) {
-                onError(ERROR_SEND_IMG);
-            }
+            sendData(otaMemDevChara);
+//            boolean writeSuccess = mBluetoothGatt.writeCharacteristic(otaMemDevChara);
+//            if (!writeSuccess) {
+//                onError(ERROR_SEND_IMG);
+//            }
+            BleLog.i("写入OTA的升级包头//第一步");
         }
     }
 
@@ -443,10 +502,12 @@ public class DialogOtaManager implements OnCharacteristicListener {
         int memInfoData = this.getMemParamsSPI();
         if (otaGpioMapChara != null) {
             otaGpioMapChara.setValue(memInfoData, BluetoothGattCharacteristic.FORMAT_UINT32, 0);
-            boolean writeSuccess = mBluetoothGatt.writeCharacteristic(otaGpioMapChara);
-            if (!writeSuccess) {
-                onError(ERROR_SEND_IMG);
-            }
+            sendData(otaGpioMapChara);
+//            boolean writeSuccess = mBluetoothGatt.writeCharacteristic(otaGpioMapChara);
+//            if (!writeSuccess) {
+//                onError(ERROR_SEND_IMG);
+//            }
+            BleLog.i("写入OTA的升级包索引//第二步");
         }
     }
 
@@ -476,11 +537,13 @@ public class DialogOtaManager implements OnCharacteristicListener {
     private void sendEndSignal() {
         if (otaMemDevChara != null) {
             otaMemDevChara.setValue(END_SIGNAL, BluetoothGattCharacteristic.FORMAT_UINT32, 0);
-            boolean writeSuccess = mBluetoothGatt.writeCharacteristic(otaMemDevChara);
-            if (!writeSuccess) {
-                onError(ERROR_SEND_IMG);
-            }
+            sendData(otaMemDevChara);
+//            boolean writeSuccess = mBluetoothGatt.writeCharacteristic(otaMemDevChara);
+//            if (!writeSuccess) {
+//                onError(ERROR_SEND_IMG);
+//            }
             endSignalSent = true;
+            BleLog.i("发送OTA升级结束");
         }
     }
 
@@ -491,14 +554,16 @@ public class DialogOtaManager implements OnCharacteristicListener {
      */
     public void reboot() {
         runOnMainThread(() -> {
+            BleLog.i("发送重启指令");
             if (otaMemDevChara != null) {
                 otaMemDevChara.setValue(REBOOT_SIGNAL, BluetoothGattCharacteristic.FORMAT_UINT32, 0);
                 boolean b = mBluetoothGatt.writeCharacteristic(otaMemDevChara);
                 mSendRebootSignalErr++;
                 if (b) {
-                    if (mBluetoothGatt != null) {
-                        mBluetoothGatt.disconnect();
-                    }
+//                    if (mBluetoothGatt != null) {
+//                        mBluetoothGatt.disconnect();
+//                    }
+                        BleLog.i("重启指令成功");
                 } else {
                     if (mSendRebootSignalErr < 3) {
                         reboot();
@@ -525,10 +590,11 @@ public class DialogOtaManager implements OnCharacteristicListener {
         }
         if (otaPatchLenChara != null) {
             otaPatchLenChara.setValue(blocksize, BluetoothGattCharacteristic.FORMAT_UINT16, 0);
-            boolean writeSuccess = mBluetoothGatt.writeCharacteristic(otaPatchLenChara);
-            if (!writeSuccess) {
-                onError(ERROR_SEND_IMG);
-            }
+            sendData(otaPatchLenChara);
+//            boolean writeSuccess = mBluetoothGatt.writeCharacteristic(otaPatchLenChara);
+//            if (!writeSuccess) {
+//                onError(ERROR_SEND_IMG);
+//            }
         }
     }
 
@@ -570,10 +636,11 @@ public class DialogOtaManager implements OnCharacteristicListener {
             if (otaPatchDataChara != null) {
                 otaPatchDataChara.setValue(chunk);
                 otaPatchDataChara.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-                boolean writeSuccess = mBluetoothGatt.writeCharacteristic(otaPatchDataChara);
-                if (!writeSuccess) {
-                    onError(ERROR_SEND_IMG);
-                }
+                sendData(otaPatchDataChara);
+//                boolean writeSuccess = mBluetoothGatt.writeCharacteristic(otaPatchDataChara);
+//                if (!writeSuccess) {
+//                    onError(ERROR_SEND_IMG);
+//                }
             }
 
             if (lastChunk) {
@@ -592,6 +659,15 @@ public class DialogOtaManager implements OnCharacteristicListener {
                 mOnBleOTAListener.onOtaProgress(progress, 1, 1);
         });
 
+    }
+
+    private synchronized void sendData(BluetoothGattCharacteristic characteristic){
+        runOnMainThread(() -> {
+            boolean writeSuccess = mBluetoothGatt.writeCharacteristic(characteristic);
+            if (!writeSuccess) {
+                onError(ERROR_SEND_IMG);
+            }
+        });
     }
 
     /**
