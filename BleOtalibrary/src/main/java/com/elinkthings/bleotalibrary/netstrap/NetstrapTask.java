@@ -4,7 +4,6 @@ package com.elinkthings.bleotalibrary.netstrap;
 import java.util.HashMap;
 import java.util.Map;
 
-import androidx.annotation.Nullable;
 
 public class NetstrapTask {
 
@@ -24,7 +23,6 @@ public class NetstrapTask {
         data.put(name, value);
     }
 
-    @Nullable
     public Object getData(String name) {
         return data.get(name);
     }
