@@ -1,14 +1,13 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 30
-    buildToolsVersion "30.0.2"
+    compileSdkVersion 31
 
     defaultConfig {
-        minSdkVersion 19
-        targetSdkVersion 30
-        versionCode 6
-        versionName "1.0.5"
+        minSdkVersion 21
+        targetSdkVersion 31
+        versionCode 7
+        versionName "1.0.4"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -22,17 +21,19 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility '1.8'
+        targetCompatibility '1.8'
     }
-    repositories {
-        flatDir {
-            dirs 'libs'
-        }
-    }
+
     sourceSets {
         main {
             jniLibs.srcDirs = ['libs']
+        }
+    }
+
+    repositories {
+        flatDir {
+            dirs 'libs'
         }
     }
 }
@@ -49,6 +50,11 @@ makeJar.dependsOn(build)
 
 
 dependencies {
-    implementation fileTree(dir: "libs", include: ["*.jar"])
-    implementation 'com.github.elinkthings:AILinkSDKRepositoryAndroid:1.8.2'
+//    implementation fileTree(dir: "libs", include: ["*.jar"])
+    implementation 'com.github.elinkthings:AILinkSDKRepositoryAndroid:1.10.9'
+    implementation files('libs/rtk-dfu-3.2.20.jar')
+    implementation files('libs/rtk-core-1.1.7.jar')
+    implementation (name: 'jl_bt_ota_V1.6.0', ext: 'aar')
+    implementation (name: 'jl_Fatfs_V1.2.0', ext: 'aar')
+
 }

@@ -17,10 +17,12 @@ public class FileBean implements Parcelable {
     private long modifyTime;
     private String path;
     public static final Creator<FileBean> CREATOR = new Creator<FileBean>() {
+        @Override
         public FileBean createFromParcel(Parcel in) {
             return new FileBean(in);
         }
 
+        @Override
         public FileBean[] newArray(int size) {
             return new FileBean[size];
         }
@@ -86,14 +88,17 @@ public class FileBean implements Parcelable {
         this.path = path;
     }
 
+    @Override
     public String toString() {
         return "FatFile{size=" + this.size + ", name='" + this.name + '\'' + ", isDir=" + this.isDir + ", modifyTime=" + this.modifyTime + ", path='" + this.path + '\'' + '}';
     }
 
+    @Override
     public int describeContents() {
         return 0;
     }
 
+    @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeLong(this.size);
         dest.writeString(this.name);

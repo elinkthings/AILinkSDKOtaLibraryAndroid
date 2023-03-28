@@ -5,8 +5,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 
+import com.elinkthings.bleotalibrary.BuildConfig;
 import com.elinkthings.bleotalibrary.listener.OnBleOTAListener;
-import com.realsil.sdk.core.BuildConfig;
 import com.realsil.sdk.core.RtkConfigure;
 import com.realsil.sdk.core.RtkCore;
 import com.realsil.sdk.dfu.DfuConstants;
