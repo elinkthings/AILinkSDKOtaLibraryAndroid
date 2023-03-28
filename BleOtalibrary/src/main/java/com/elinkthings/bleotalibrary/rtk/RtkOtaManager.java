@@ -6,8 +6,12 @@ import android.os.Looper;
 import android.text.TextUtils;
 
 import com.elinkthings.bleotalibrary.listener.OnBleOTAListener;
+import com.realsil.sdk.core.BuildConfig;
+import com.realsil.sdk.core.RtkConfigure;
+import com.realsil.sdk.core.RtkCore;
 import com.realsil.sdk.dfu.DfuConstants;
 import com.realsil.sdk.dfu.DfuException;
+import com.realsil.sdk.dfu.RtkDfu;
 import com.realsil.sdk.dfu.image.BinFactory;
 import com.realsil.sdk.dfu.image.BinIndicator;
 import com.realsil.sdk.dfu.image.LoadParams;
@@ -32,10 +36,18 @@ import java.util.List;
  * realtek ota工具类
  */
 public class RtkOtaManager {
+
+    public static final int OTA_MODE_NORMAL_FUNCTION = DfuConstants.OTA_MODE_NORMAL_FUNCTION;
+    public static final int OTA_MODE_SILENT_FUNCTION = DfuConstants.OTA_MODE_SILENT_FUNCTION;
+    public static final int OTA_MODE_SILENT_EXTEND_FLASH = DfuConstants.OTA_MODE_SILENT_EXTEND_FLASH;
+    public static final int OTA_MODE_SILENT_NO_TEMP = DfuConstants.OTA_MODE_SILENT_NO_TEMP;
+    public static final int OTA_MODE_AUTOMATIC = DfuConstants.OTA_MODE_AUTOMATIC;
+
+
     private String mMac = "";
     private String mFilePath = "";
     private OnBleOTAListener mOnBleOTAListener;
-    private int mOtaType = DfuConstants.OTA_MODE_NORMAL_FUNCTION;
+    private int mOtaType = OTA_MODE_NORMAL_FUNCTION;
     private int mFileLocation = -1;
     private Context mContext;
     private DfuConfig mDfuConfig;
@@ -48,24 +60,24 @@ public class RtkOtaManager {
     /**
      * 总步骤
      */
-    private int mStepSize=0;
-    private int mStep=-1;
+    private int mStepSize = 0;
+    private int mStep = -1;
     private List<FileTypeInfo> mFileTypeInfos;
-    private List<String> mListVersion=new ArrayList<>();
+    private List<String> mListVersion = new ArrayList<>();
 
-    public static Builder newInstance(Context context) {
+    public static Builder newBuilder(Context context) {
         return new Builder(context);
     }
 
 
     public static final class Builder {
-       private BinInfo mBinInfo;
-       private String mMac = "";
-       private String mFilePath = "";
-       private OnBleOTAListener mOnBleOTAListener;
-       private int mFileLocation = -1;
-       private Context mContext;
-       private List<FileTypeInfo> mFileTypeInfos;
+        private BinInfo mBinInfo;
+        private String mMac = "";
+        private String mFilePath = "";
+        private OnBleOTAListener mOnBleOTAListener;
+        private int mFileLocation = -1;
+        private Context mContext;
+        private List<FileTypeInfo> mFileTypeInfos;
 
         public Builder(Context context) {
             mContext = context;
@@ -133,12 +145,14 @@ public class RtkOtaManager {
         mDfuAdapter = GattDfuAdapter.getInstance(mContext);
         mDfuAdapter.initialize(mDfuHelperCallback);
         mBinInfo = builder.mBinInfo;
-        mFileTypeInfos=builder.mFileTypeInfos;
+        mFileTypeInfos = builder.mFileTypeInfos;
         for (FileTypeInfo fileTypeInfo : mFileTypeInfos) {
             mListVersion.add(fileTypeInfo.getName());
         }
-        mStepSize=mFileTypeInfos.size();
-
+        mStepSize = mFileTypeInfos.size();
+        RtkConfigure configure = new RtkConfigure.Builder().debugEnabled(BuildConfig.DEBUG).printLog(true).logTag("OTA").build();
+        RtkCore.initialize(mContext, configure);
+        RtkDfu.initialize(mContext, BuildConfig.DEBUG);
     }
 
     public int getStepSize() {
@@ -149,15 +163,19 @@ public class RtkOtaManager {
      * 最后执行开始升级
      */
     public void startOta() {
-        this.startOta(mOtaType,mStep);
+        this.startOta(mOtaType, mStep);
     }
 
     /**
      * 最后执行开始升级
      *
-     * @param otaType {@link DfuConstants.OTA_MODE_NORMAL_FUNCTION, DfuConstants.OTA_MODE_SILENT_FUNCTION, DfuConstants.OTA_MODE_SILENT_EXTEND_FLASH, DfuConstants.OTA_MODE_SILENT_NO_TEMP, DfuConstants.OTA_MODE_AUTOMATIC}
+     * @param otaType {@link RtkOtaManager#OTA_MODE_NORMAL_FUNCTION}
+     *                {@link RtkOtaManager#OTA_MODE_SILENT_FUNCTION }
+     *                {@link RtkOtaManager#OTA_MODE_SILENT_EXTEND_FLASH}
+     *                {@link RtkOtaManager#OTA_MODE_SILENT_NO_TEMP}
+     *                {@link RtkOtaManager#OTA_MODE_AUTOMATIC}
      */
-    public void startOta(int otaType,int step) {
+    public void startOta(int otaType, int step) {
         mOtaType = otaType;
         mStep = step;
         if (mOtaDeviceInfo == null) {
@@ -183,11 +201,11 @@ public class RtkOtaManager {
         mDfuConfig.setWaitActiveCmdAckEnabled(false);//ack激活
         mDfuConfig.setFileSuffix("bin");
         if (step >= 0) {
-            if (mFileTypeInfos.size()>step){
+            if (mFileTypeInfos.size() > step) {
                 FileTypeInfo fileTypeInfo = mFileTypeInfos.get(step);
                 mDfuConfig.setFileIndicator((1 << fileTypeInfo.getBitNumber()));
             }
-        }else {
+        } else {
             mDfuConfig.setFileIndicator(BinIndicator.INDICATOR_FULL);
         }
 //        mDfuConfig.setFileIndicator();

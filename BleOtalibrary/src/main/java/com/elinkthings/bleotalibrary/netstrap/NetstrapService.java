@@ -2,8 +2,6 @@ package com.elinkthings.bleotalibrary.netstrap;
 
 import android.util.Log;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 
@@ -25,9 +23,6 @@ public class NetstrapService extends Thread {
 
     private boolean isOtaPaused;
 
-    private long otaStartTime;
-
-    private long otaEndTime;
 
 
     public void setBleService(OPLOtaManager bleService) {
@@ -50,12 +45,6 @@ public class NetstrapService extends Thread {
     public void addTask(NetstrapTask task) {
         try {
             taskQueue.put(task);
-            if (task.getState() != NetstrapState.OTA_SEND && !isOtaStarted) {
-                if (task.getState() != NetstrapState.TO_SCAN_DEVICE) {
-//
-
-                }
-            }
         } catch (InterruptedException e) {
             Log.e(NetstrapService.class.getName(), e.getMessage(), e);
         }
@@ -68,7 +57,6 @@ public class NetstrapService extends Thread {
         if (otaImage != null) {
             byte[] otaHeader = otaImage.getHeader();
             NetstrapPacket pkt = NetstrapPacket.createOtaUpgradeReqPacket(OTA_MAX_RX_OCTETS, otaHeader);
-            Log.i(Tag, otaImage.toString());
             bleService.send(pkt.getBytes());
         } else {
 
@@ -77,7 +65,7 @@ public class NetstrapService extends Thread {
 
     int cnt = 0;
 
-    private void otaSend() {
+    public void otaSend() {
         OtaImage otaImage = otaService.getOtaImage();
         byte[] rawData = otaImage.getRawData();
 
@@ -86,15 +74,12 @@ public class NetstrapService extends Thread {
             NetstrapPacket pkt = NetstrapPacket.createOtaRawDataReqPacket(rawData);
             bleService.send(pkt.getBytes());
             bleService.onOtaProgress((int) (1.0f*cnt/otaImage.getSize()*100f));
-            ByteBuffer newBuffer = ByteBuffer.allocate(20).order(ByteOrder.LITTLE_ENDIAN);
-            newBuffer.put(pkt.getBytes(), 0, 20);
             isOtaStarted = true;
             otaIndex++;
             if (otaIndex == OTA_MAX_RX_OCTETS) {
                 isOtaPaused = true;
             }
         } else {
-            otaEndTime = System.currentTimeMillis();
             isOtaStarted = false;
             otaService.resetOtaImage();
             otaEnd();
@@ -117,7 +102,6 @@ public class NetstrapService extends Thread {
             case NetstrapPacket.PDU_TYPE_EVT_OTA_UPGRADE_RSP:
                 if (packet.getStatus() == 0x00) {
                     //发送开始包
-                    otaStartTime = System.currentTimeMillis();
                     isOtaStarted = true;
                     isOtaPaused = false;
                     otaIndex = 0;
@@ -151,7 +135,6 @@ public class NetstrapService extends Thread {
                 NetstrapTask task = taskQueue.take();
                 switch (task.getState()) {
                     case OTA_START:
-                        bleService.ReqConnBle2HighPriority();
                         otaStart();
                         break;
 

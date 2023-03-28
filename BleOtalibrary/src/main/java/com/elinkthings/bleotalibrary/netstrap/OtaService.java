@@ -20,6 +20,8 @@ public class OtaService {
 
     private Uri otaImagePath;
 
+    private String filePath;
+
     private OtaImage otaImage = null;
 
     private Context mContext;
@@ -32,15 +34,22 @@ public class OtaService {
         this.otaImagePath = otaImagePath;
     }
 
+    public void setOtaImagePath(String filePath) {
+        this.filePath = filePath;
+    }
+
+
     public OtaImage getOtaImage() {
         if (otaImage == null) {
             try {
-                //Why API 26 occurs permission denied?????
-                ParcelFileDescriptor parcelFileDescriptor =mContext.getContentResolver().openFileDescriptor(otaImagePath, "r");
-
-                FileDescriptor fileDescriptor = parcelFileDescriptor.getFileDescriptor();
-                BufferedInputStream in = new BufferedInputStream(new FileInputStream(fileDescriptor));
-
+                BufferedInputStream in;
+                if (filePath != null) {
+                    in = new BufferedInputStream(new FileInputStream(filePath));
+                } else {
+                    ParcelFileDescriptor parcelFileDescriptor = mContext.getContentResolver().openFileDescriptor(otaImagePath, "r");
+                    FileDescriptor fileDescriptor = parcelFileDescriptor.getFileDescriptor();
+                    in = new BufferedInputStream(new FileInputStream(fileDescriptor));
+                }
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 int len = 0;
                 int b;
@@ -81,11 +90,13 @@ public class OtaService {
                 }
 
                 // fetch image content
-                while ((len = in.read(buf)) != -1) out.write(buf, 0, len);
+                while ((len = in.read(buf)) != -1)
+                    out.write(buf, 0, len);
                 in.close();
                 byte[] allImage = out.toByteArray();
                 if (imageSize != allImage.length) {
-                    throw new Exception("OTA Image broken, imageSize: " + imageSize + ", allSize: " + allImage.length + ", projectId: " + projectId + ", chipId: " + chipId + ", fwId: " + fwId + ", checksum: " + checksum);
+                    throw new Exception("OTA Image broken, imageSize: " + imageSize + ", allSize: " + allImage.length + ", projectId: " + projectId + ", chipId: " + chipId + ", fwId: " + fwId + ", "
+                            + "checksum: " + checksum);
                 }
 
                 otaImage = new OtaImage(projectId, chipId, fwId, checksum, header, allImage);

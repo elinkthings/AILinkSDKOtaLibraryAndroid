@@ -1,9 +1,9 @@
 package com.elinkthings.bleotalibrary.netstrap;
 
 
+
 import java.util.HashMap;
 import java.util.Map;
-
 
 public class NetstrapTask {
 

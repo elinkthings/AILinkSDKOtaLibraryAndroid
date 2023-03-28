@@ -15,7 +15,6 @@ import com.elinkthings.bleotalibrary.listener.OnBleOTAListener;
 import com.pingwang.bluetoothlib.device.BleDevice;
 import com.pingwang.bluetoothlib.listener.OnBleMtuListener;
 import com.pingwang.bluetoothlib.listener.OnCharacteristicListener;
-import com.pingwang.bluetoothlib.utils.BleStrUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.util.UUID;
@@ -42,14 +41,17 @@ public class OPLOtaManager implements OnCharacteristicListener {
      */
     private boolean mVerifySupport = false;
     private BleDevice mBleDevice;
+    private OtaService mOtaService;
 
     private OPLOtaManager(Builder builder) {
         Context context = builder.mContext;
-        OtaService otaService = new OtaService(context);
-        otaService.setOtaImagePath(builder.mFilePath);
+        mOtaService = new OtaService(context);
+        mOtaService.setOtaImagePath(builder.mFilePath);
+
         netstrapService = new NetstrapService();
-        netstrapService.setOtaService(otaService);
+        netstrapService.setOtaService(mOtaService);
         netstrapService.setBleService(this);
+
         this.mOnBleOTAListener = builder.mOnBleOTAListener;
         mBleDevice = builder.mBleDevice;
         if (mBleDevice != null) {
@@ -74,7 +76,7 @@ public class OPLOtaManager implements OnCharacteristicListener {
                 }
             });
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                mBleDevice.setConnectPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED);
+                mBleDevice.setConnectPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
                 mBleDevice.setMtu(BLE_MTU_EXTENTED);
             }
         }
@@ -102,7 +104,8 @@ public class OPLOtaManager implements OnCharacteristicListener {
         private Context mContext;
         private BleDevice mBleDevice;
         private OnBleOTAListener mOnBleOTAListener;
-        private Uri mFilePath;
+        private Uri mFileUri;
+        private String mFilePath;
 
         public Builder(Context context) {
             mContext = context;
@@ -114,8 +117,13 @@ public class OPLOtaManager implements OnCharacteristicListener {
             return this;
         }
 
-        public Builder setFilePath(Uri filePath) {
-            mFilePath = filePath;
+        public Builder setFileUri(Uri fileUri) {
+            mFileUri = fileUri;
+            return this;
+        }
+
+        public Builder setFilePath(String path) {
+            mFilePath = path;
             return this;
         }
 
@@ -140,20 +148,37 @@ public class OPLOtaManager implements OnCharacteristicListener {
 
     @Override
     public void onDescriptorWriteOK(BluetoothGattDescriptor descriptor) {
-        UUID uuid = descriptor.getUuid();
+        UUID uuid = descriptor.getCharacteristic().getUuid();
         if (uuid.equals(CHARACTERISTIC_RX_UUID)) {
             netstrapService.addTask(new NetstrapTask(NetstrapState.OTA_START));
+//            otaStart();
         }
     }
 
     @Override
     public void onCharacteristicChanged(BluetoothGattCharacteristic characteristic) {
         if (characteristic.getUuid().equals(CHARACTERISTIC_RX_UUID)) {
+//            Log.i("Tag1","接收的数据:"+ BleStrUtils.byte2HexStr(characteristic.getValue()));
             for (NetstrapPacket packet : NetstrapPacket.decodePacket(characteristic.getValue())) {
                 NetstrapTask task = new NetstrapTask(NetstrapState.TO_PROCESS_RX_PACKET);
                 task.setData("netstrapPacket", packet);
                 netstrapService.addTask(task);
             }
+//
+//            byte[] value = characteristic.getValue();
+//            int len=((int)value[2])+4;
+//            int reason=0;
+//            if (value.length>=len){
+//                int cmdId=value[0];
+//                reason=value[6];
+//            }
+//            otaSend();
+//            if (reason != 0x00) {
+//                onFail();
+//            } else {
+//                onSuccess();
+//            }
+
         }
     }
 
@@ -174,9 +199,10 @@ public class OPLOtaManager implements OnCharacteristicListener {
     void send(byte[] data) {
         characteristicData = data;
         characteristicCursor = 0;
+//        writeBleCharacteristicIfRemained();;
         mHandler.postDelayed(() -> {
             writeBleCharacteristicIfRemained();
-        }, 150);
+        }, 100);
     }
 
     private void writeBleCharacteristicIfRemained() {
@@ -189,14 +215,12 @@ public class OPLOtaManager implements OnCharacteristicListener {
                 try {
                     int availableTransmitLength = this.mMtu - 3;
                     int lastCursor = characteristicCursor;
-                    int fragLength =
-                            (characteristicCursor + availableTransmitLength <= characteristicData.length)
-                                    ? availableTransmitLength : (characteristicData.length - characteristicCursor);
+                    int fragLength = (characteristicCursor + availableTransmitLength <= characteristicData.length) ? availableTransmitLength : (characteristicData.length - characteristicCursor);
                     ByteArrayOutputStream out = new ByteArrayOutputStream();
-
                     out.write(characteristicData, lastCursor, fragLength);
-                    Log.e(Tag, BleStrUtils.byte2HexStr(out.toByteArray()));
-                    characteristicTx.setValue(out.toByteArray());
+                    byte[] bytes = out.toByteArray();
+//                    Log.i("Tag1","发送的数据:"+ BleStrUtils.byte2HexStr(bytes));
+                    characteristicTx.setValue(bytes);
                     characteristicTx.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
                     boolean b = mBluetoothGatt.writeCharacteristic(characteristicTx);
                     characteristicCursor += fragLength;
@@ -254,4 +278,28 @@ public class OPLOtaManager implements OnCharacteristicListener {
             }
         });
     }
+
+
+    private void otaStart() {
+        OtaImage otaImage = mOtaService.getOtaImage();
+        if (otaImage != null) {
+            byte[] otaHeader = otaImage.getHeader();
+            send(otaHeader);
+        }
+    }
+
+    private int cnt = 0;
+
+    public void otaSend() {
+        OtaImage otaImage = mOtaService.getOtaImage();
+        byte[] rawData = otaImage.getRawData();
+        if (rawData != null) {
+            cnt = cnt + rawData.length;
+            NetstrapPacket pkt = NetstrapPacket.createOtaRawDataReqPacket(rawData);
+            send(pkt.getBytes());
+            onOtaProgress((int) (1.0f * cnt / otaImage.getSize() * 100f));
+        }
+    }
+
+
 }

@@ -753,7 +753,8 @@ public class NetstrapPacket {
         // check whether PDU is complete
         while(true)
         {
-            int allPacketLength = rxBuffer.getShort(2) + 4;
+            short aShort = rxBuffer.getShort(2);
+            int allPacketLength = aShort + 4;
             if( currentLength >= allPacketLength )
             {
                 NetstrapPacket rxPacket = new NetstrapPacket();
