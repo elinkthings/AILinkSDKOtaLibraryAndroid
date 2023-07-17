@@ -1,5 +1,6 @@
 package com.elinkthings.bleotalibrary.netstrap;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
@@ -142,8 +143,9 @@ public class OPLOtaManager implements OnCharacteristicListener {
 
     @Override
     public void onCharacteristicWriteOK(BluetoothGattCharacteristic characteristic) {
-        if (characteristic.getUuid().equals(CHARACTERISTIC_TX_UUID))
+        if (characteristic.getUuid().equals(CHARACTERISTIC_TX_UUID)) {
             writeBleCharacteristicIfRemained();
+        }
     }
 
     @Override
@@ -183,12 +185,14 @@ public class OPLOtaManager implements OnCharacteristicListener {
     }
 
 
+    @SuppressLint("MissingPermission")
     void ReqConnBle2BalPriority() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             this.mBluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED);
         }
     }
 
+    @SuppressLint("MissingPermission")
     void ReqConnBle2HighPriority() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             mBluetoothGatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
@@ -222,7 +226,7 @@ public class OPLOtaManager implements OnCharacteristicListener {
 //                    Log.i("Tag1","发送的数据:"+ BleStrUtils.byte2HexStr(bytes));
                     characteristicTx.setValue(bytes);
                     characteristicTx.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-                    boolean b = mBluetoothGatt.writeCharacteristic(characteristicTx);
+                    @SuppressLint("MissingPermission") boolean b = mBluetoothGatt.writeCharacteristic(characteristicTx);
                     characteristicCursor += fragLength;
                     if (characteristicCursor == characteristicData.length) {
                         characteristicData = null;

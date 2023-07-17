@@ -1,4 +1,7 @@
-apply plugin: 'com.android.library'
+plugins {
+    id 'com.android.library'
+    id 'maven-publish'
+}
 
 android {
     compileSdkVersion 31
@@ -6,8 +9,8 @@ android {
     defaultConfig {
         minSdkVersion 21
         targetSdkVersion 31
-        versionCode 7
-        versionName "1.0.4"
+        versionCode 10
+        versionName "1.1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -21,8 +24,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility '1.8'
-        targetCompatibility '1.8'
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 
     sourceSets {
@@ -51,10 +54,30 @@ makeJar.dependsOn(build)
 
 dependencies {
 //    implementation fileTree(dir: "libs", include: ["*.jar"])
-    implementation 'com.github.elinkthings:AILinkSDKRepositoryAndroid:1.10.9'
+    implementation 'com.github.elinkthings:AILinkSDKRepositoryAndroid:1.13.10'
+
     implementation files('libs/rtk-dfu-3.2.20.jar')
     implementation files('libs/rtk-core-1.1.7.jar')
-    implementation (name: 'jl_bt_ota_V1.6.0', ext: 'aar')
-    implementation (name: 'jl_Fatfs_V1.2.0', ext: 'aar')
+    //杰理OTA库
+    implementation(name: 'jl_bt_ota_V1.9.2-release', ext: 'aar')
+    //杰理rcsp基础库
+    implementation(name: 'jl_rcsp_V0.5.1-release', ext: 'aar')
+    //图像转换相关
+    implementation(name: 'BmpConvert_V1.2.0-release', ext: 'aar')
+    //杰理健康相关
+    implementation(name: 'JL_Watch_V1.9.1-release', ext: 'aar')
 
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                groupId = 'com.github.elinkthings'
+                artifactId = 'AILinkSDKOtaLibraryAndroid'
+                version = "1.1.0"
+            }
+        }
+    }
 }

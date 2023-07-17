@@ -1,5 +1,6 @@
 package com.elinkthings.bleotalibrary.bk;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
@@ -36,12 +37,18 @@ public class BKOtaManager implements OnCharacteristicListener, BleDevice.onDisCo
     private OnBleOTAListener mOnBleOTAListener;
 
     private HashMap errors;
-    public static final int ERROR_COMMUNICATION = 0xffff; // ble communication error
-    public static final int ERROR_SUOTA_NOT_FOUND = 0xfffe; // mSuota service was not found
-    public static final int ERROR_READ_FILE = 0xfffd; // read fileUtils error
-    public static final int ERROR_ON_START = 0xfffc; // Work can't upgrade
-    public static final int ERROR_LOW_POWER = 0xfffb; // Low power can't upgrade
-    public static final int ERROR_SEND_IMG = 0xfffa; // Write Characteristic error
+    // ble communication error
+    public static final int ERROR_COMMUNICATION = 0xffff;
+    // mSuota service was not found
+    public static final int ERROR_SUOTA_NOT_FOUND = 0xfffe;
+    // read fileUtils error
+    public static final int ERROR_READ_FILE = 0xfffd;
+    // Work can't upgrade
+    public static final int ERROR_ON_START = 0xfffc;
+    // Low power can't upgrade
+    public static final int ERROR_LOW_POWER = 0xfffb;
+    // Write Characteristic error
+    public static final int ERROR_SEND_IMG = 0xfffa;
 
     public static final UUID UUID_OTA_SERVICE = UUID.fromString("f000ffc0-0451-4000-b000-000000000000");
     public static final UUID UUID_OTA_READ = UUID.fromString("f000ffc1-0451-4000-b000-000000000000");
@@ -280,6 +287,7 @@ public class BKOtaManager implements OnCharacteristicListener, BleDevice.onDisCo
     /**
      * 发送OTA升级包的数据块
      */
+    @SuppressLint("MissingPermission")
     private synchronized void sendBlock(int index) {
         byte[] block = fileUtils.getBlock(index);
         final float progress = ((float) (index) / (float) fileUtils.getBlocks()) * 100;
@@ -300,8 +308,9 @@ public class BKOtaManager implements OnCharacteristicListener, BleDevice.onDisCo
             }
         }
         runOnMainThread(() -> {
-            if (mOnBleOTAListener != null)
+            if (mOnBleOTAListener != null) {
                 mOnBleOTAListener.onOtaProgress(progress, 1, 1);
+            }
         });
         if (index == fileUtils.getBlocks()) {
             lastBlock = true;
@@ -313,6 +322,7 @@ public class BKOtaManager implements OnCharacteristicListener, BleDevice.onDisCo
     /**
      * 发送OTA升级包的数据块
      */
+    @SuppressLint("MissingPermission")
     private synchronized void sendHeadBlock() {
         byte[] block = fileUtils.getHeadBlock();
         if (mOtaWriteData1 != null) {
@@ -348,11 +358,13 @@ public class BKOtaManager implements OnCharacteristicListener, BleDevice.onDisCo
         threadHandler.removeMessages(OTA_SEND_MSG);
 
         runOnMainThread(() -> {
-            if (mOnBleOTAListener != null)
+            if (mOnBleOTAListener != null) {
                 mOnBleOTAListener.onOtaSuccess();
+            }
         });
-        if (fileUtils != null)
+        if (fileUtils != null) {
             fileUtils.close();
+        }
 
     }
 
@@ -361,13 +373,15 @@ public class BKOtaManager implements OnCharacteristicListener, BleDevice.onDisCo
             String error = (String) errors.get(errorCode);
             Log.e(TAG, "Error: " + errorCode + " " + error);
             runOnMainThread(() -> {
-                if (mOnBleOTAListener != null)
+                if (mOnBleOTAListener != null) {
                     mOnBleOTAListener.onOtaFailure(errorCode, error);
+                }
             });
 
             hasError = true;
-            if (fileUtils != null)
+            if (fileUtils != null) {
                 fileUtils.close();
+            }
         }
     }
 
@@ -399,6 +413,7 @@ public class BKOtaManager implements OnCharacteristicListener, BleDevice.onDisCo
     };
 
 
+    @SuppressLint("MissingPermission")
     @Override
     public void onDisConnected() {
         if (!lastBlock) {

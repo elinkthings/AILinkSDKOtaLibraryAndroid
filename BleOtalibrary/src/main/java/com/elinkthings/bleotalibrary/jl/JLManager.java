@@ -15,30 +15,30 @@ import java.util.ArrayList;
 /**
  * xing<br>
  * 2022/6/22<br>
- * java类作用描述
+ * JL SDK管理类
  */
 public class JLManager {
 
     public final static int TYPE_OTA = 1;
     public final static int TYPE_WATCH = 2;
-    public final static String CUSTOMIZE_WATCH_NAME = JLWatchManager.CUSTOMIZE_WATCH_NAME;
+    public final static int TYPE_WATCH_CUSTOMIZE = 3;
     public final static String CUSTOMIZE_OTA_NAME = JLOtaManager.WATCH_OTA_NAME;
     private JLOtaManager mJLOtaManager;
     private JLWatchManager mJLWatchManager;
+    private JLBgWatchManager mJLBgWatchManager;
     private int mType;
 
 
     public JLManager(Builder builder) {
         mType = builder.mType;
         if (TYPE_OTA == builder.mType) {
-            mJLOtaManager = JLOtaManager.newBuilder(builder.mContext).setFilePath(builder.mFilePath).setOnBleOTAListener(builder.mOnBleOTAListener).build(builder.mBleDevice);
+            mJLOtaManager = JLOtaManager.newBuilder(builder.mContext).setFilePath(builder.mFilePath).setMtu(builder.mMtu).setOnBleOTAListener(builder.mOnBleOTAListener).build(builder.mBleDevice);
+        } else if (TYPE_WATCH_CUSTOMIZE == builder.mType) {
+            mJLBgWatchManager = JLBgWatchManager.newBuilder(builder.mContext).setFilePath(builder.mFilePath).setMtu(builder.mMtu).setOnBleFlashListener(builder.mOnBleFlashListener).build(builder.mBleDevice);
         } else {
-            mJLWatchManager = JLWatchManager.newBuilder().setFilePath(builder.mFilePath).setOnBleFlashListener(builder.mOnBleFlashListener).build(builder.mBleDevice);
-//            mJLWatchManager.init();
+            mJLWatchManager = JLWatchManager.newBuilder(builder.mContext).setFilePath(builder.mFilePath).setMtu(builder.mMtu).setOnBleFlashListener(builder.mOnBleFlashListener).build(builder.mBleDevice);
         }
     }
-
-
 
 
     public int getType() {
@@ -56,6 +56,7 @@ public class JLManager {
         private OnBleFlashListener mOnBleFlashListener;
         private String mFilePath = "";
         private int mType;
+        private int mMtu = 0;
 
         public Builder(Context context) {
             mContext = context;
@@ -74,6 +75,11 @@ public class JLManager {
          */
         public Builder setType(int type) {
             mType = type;
+            return this;
+        }
+
+        public Builder setMtu(int mtu) {
+            mMtu = mtu;
             return this;
         }
 
@@ -109,6 +115,9 @@ public class JLManager {
         }
     }
 
+    /**
+     * 开始在OTA
+     */
     public void startOta() {
         if (mJLOtaManager != null) {
             mJLOtaManager.startOta();
@@ -123,6 +132,11 @@ public class JLManager {
     }
 
 
+    /**
+     * 设置设备回连
+     *
+     * @param bleDevice ble设备
+     */
     public void onBtDeviceConnection(BleDevice bleDevice) {
         if (mJLOtaManager != null) {
             BleLog.i("OTA回连");
@@ -131,6 +145,8 @@ public class JLManager {
     }
 
 
+    //---------------------
+    //    表盘
     //---------------------
 
 
@@ -148,14 +164,19 @@ public class JLManager {
     }
 
 
-    public void release() {
-        if (mJLOtaManager != null) {
-            mJLOtaManager.release();
+    /**
+     * 开始传输文件
+     *
+     * @return 操作结果
+     */
+    public boolean startCustomizeWatch(String path) {
+         if (mJLBgWatchManager != null) {
+            return mJLBgWatchManager.startCustomizeWatch(path);
         }
-        if (mJLWatchManager != null) {
-            mJLWatchManager.release();
-        }
+        return false;
+
     }
+
 
 
     /**
@@ -179,8 +200,8 @@ public class JLManager {
      */
     public boolean setCurrentWatch(String path, OnWatchFileListener<FileBean> listener) {
         if (mJLWatchManager != null) {
-            if (!path.startsWith("/")){
-                path="/"+path;
+            if (!path.startsWith("/")) {
+                path = "/" + path;
             }
             return mJLWatchManager.setCurrentWatch(path, new OnWatchOpCallback<FatFile>() {
                 @Override
@@ -188,7 +209,7 @@ public class JLManager {
                     if (listener != null) {
                         if (fatFile != null) {
                             listener.onSuccess(new FileBean(fatFile));
-                        }else {
+                        } else {
                             listener.onSuccess(null);
                         }
                     }
@@ -214,12 +235,31 @@ public class JLManager {
      */
     public boolean deleteWatchFile(String path, OnWatchFileListener<Boolean> listener) {
         if (mJLWatchManager != null) {
-            if (!path.startsWith("/")){
-                path="/"+path;
+            if (!path.startsWith("/")) {
+                path = "/" + path;
             }
-            return mJLWatchManager.deleteWatch(path,listener);
+            return mJLWatchManager.deleteWatch(path, listener);
         }
         return false;
+    }
+
+
+    /**
+     * 释放
+     */
+    public void release() {
+        if (mJLOtaManager != null) {
+            mJLOtaManager.release();
+            mJLOtaManager = null;
+        }
+        if (mJLWatchManager != null) {
+            mJLWatchManager.release();
+            mJLWatchManager = null;
+        }
+        if (mJLBgWatchManager != null) {
+            mJLBgWatchManager.release();
+            mJLBgWatchManager = null;
+        }
     }
 
 
@@ -229,5 +269,10 @@ public class JLManager {
         void onFailed(int code, String message);
     }
 
+    public void setOnDeviceScreenListener(JLBgWatchManager.OnDeviceScreenListener onDeviceScreenListener) {
+        if (mJLBgWatchManager!=null) {
+            mJLBgWatchManager.setOnDeviceScreenListener(onDeviceScreenListener);
+        }
+    }
 
 }

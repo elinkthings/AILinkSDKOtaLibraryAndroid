@@ -14,6 +14,8 @@ import android.text.TextUtils;
 
 import com.elinkthings.bleotalibrary.config.FlashConfig;
 import com.elinkthings.bleotalibrary.listener.OnBleFlashListener;
+import com.jieli.bmp_convert.BmpConvert;
+import com.jieli.bmp_convert.OnConvertListener;
 import com.jieli.jl_bt_ota.constant.BluetoothConstant;
 import com.jieli.jl_bt_ota.constant.StateCode;
 import com.jieli.jl_fatfs.FatFsErrCode;
@@ -24,6 +26,8 @@ import com.jieli.jl_rcsp.impl.WatchOpImpl;
 import com.jieli.jl_rcsp.interfaces.watch.OnWatchCallback;
 import com.jieli.jl_rcsp.interfaces.watch.OnWatchOpCallback;
 import com.jieli.jl_rcsp.model.base.BaseError;
+import com.jieli.jl_rcsp.model.response.ExternalFlashMsgResponse;
+import com.jieli.jl_rcsp.tool.DeviceStatusManager;
 import com.pingwang.bluetoothlib.config.BleConfig;
 import com.pingwang.bluetoothlib.device.BleDevice;
 import com.pingwang.bluetoothlib.device.SendDataBean;
@@ -31,45 +35,38 @@ import com.pingwang.bluetoothlib.listener.OnBleMtuListener;
 import com.pingwang.bluetoothlib.listener.OnCharacteristicListener;
 import com.pingwang.bluetoothlib.utils.BleLog;
 
-import java.util.ArrayList;
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 
 /**
  * xing<br>
- * 2022/6/22<br>
- * 杰里手表表盘(Flash)管理类
+ * 2023/6/17<br>
+ * 杰里手表自定义表盘
  */
-class JLWatchManager extends WatchOpImpl implements BleDevice.onDisConnectedListener, OnFatFileProgressListener, OnBleMtuListener, OnCharacteristicListener, RcspAuth.IRcspAuthOp, RcspAuth.OnRcspAuthListener {
+public class JLBgWatchManager extends WatchOpImpl implements BleDevice.onDisConnectedListener, OnFatFileProgressListener, OnBleMtuListener, OnCharacteristicListener, RcspAuth.IRcspAuthOp, RcspAuth.OnRcspAuthListener {
 
-    public final static String WATCH_NAME = FlashConfig.WATCH_NAME;
-    /**
-     * 文件大小,当手表内置表盘数量超过该值时,删除最后的表盘
-     */
-    private final static int WATCH_FILE_SIZE = 100;
+    public final static String CUSTOMIZE_WATCH_NAME = FlashConfig.CUSTOMIZE_WATCH_NAME;
     private BleDevice mBleDevice;
     private int mMtu = 0;
     private OnBleFlashListener mOnBleFlashListener;
     private boolean mInitOk = false;
-    private String mFilePath;
     /**
      * Notify是否成功
      */
     private boolean mNotify = false;
     private RcspAuth mRcspAuth;
 
-    /**
-     * 是否在升级表盘状态
-     */
-    private boolean mStartStatus = false;
-    /**
-     * 待删除的表盘路径
-     */
-    private volatile String mDeleteWatchPath = "";
+
     /**
      * 新表盘路径
      */
     private volatile String mNewWatchPath = "";
-    private static Builder mBuilder;
+    private static volatile Builder mBuilder;
+    private Context mContext;
+    private OnDeviceScreenListener mOnDeviceScreenListener;
+
+
 
     private Handler mHandler = new Handler(Looper.getMainLooper()) {
         @Override
@@ -84,7 +81,7 @@ class JLWatchManager extends WatchOpImpl implements BleDevice.onDisConnectedList
         }
     };
 
-    public JLWatchManager(Builder builder) {
+    public JLBgWatchManager(Builder builder) {
         super(WatchOpImpl.FUNC_WATCH);
 
 //        JL_Log.setTagPrefix("health"); //设置log的标识
@@ -94,8 +91,8 @@ class JLWatchManager extends WatchOpImpl implements BleDevice.onDisConnectedList
 //isSaveFile --- 是否保存log文件，建议是开发时打开，发布时关闭
 //        JL_Log.configureLog(builder.mContext,true, true);
         mOnBleFlashListener = builder.mOnBleFlashListener;
-        mFilePath = builder.mFilePath;
         mMtu = builder.mMtu;
+        mContext = builder.mContext;
         onBtDeviceConnection(builder.mBleDevice);
 
     }
@@ -142,7 +139,7 @@ class JLWatchManager extends WatchOpImpl implements BleDevice.onDisConnectedList
             return this;
         }
 
-        public JLWatchManager build(BleDevice bleDevice) {
+        public JLBgWatchManager build(BleDevice bleDevice) {
             if (mBleDevice != null && mBleDevice != bleDevice) {
                 mAuthOk = false;
             }
@@ -150,7 +147,7 @@ class JLWatchManager extends WatchOpImpl implements BleDevice.onDisConnectedList
             if (mBleDevice == null) {
                 return null;
             }
-            return new JLWatchManager(this);
+            return new JLBgWatchManager(this);
         }
     }
 
@@ -186,14 +183,12 @@ class JLWatchManager extends WatchOpImpl implements BleDevice.onDisConnectedList
             @Override
             public void onWatchSystemInit(int code) {
                 super.onWatchSystemInit(code);
-                BleLog.i("onWatchSystemInit:" + code + "  StartStatus:" + mStartStatus);
+                BleLog.i("onWatchSystemInit:" + code );
                 //code为0时，意味着库的初始化已完成，可以进行功能操作
                 //code为错误码时，需要断开设备
                 mInitOk = code == 0;
                 if (mInitOk) {
-                    if (mStartStatus) {
-                        startFlash();
-                    }
+                    getWeightAndHeight();
                 } else {
                     onStop(code);
                 }
@@ -220,10 +215,8 @@ class JLWatchManager extends WatchOpImpl implements BleDevice.onDisConnectedList
                         public void onStop(int i) {
                             if (i == 0) {
                                 BleLog.i("系统异常,恢复成功.");
-                                if (mStartStatus) {
-                                    startFlash();
-                                } else {
-                                    release();
+                                if (mOnDeviceScreenListener!=null) {
+                                    mOnDeviceScreenListener.onDeviceScreen(mViewW,mViewH);
                                 }
                             }
                         }
@@ -244,6 +237,31 @@ class JLWatchManager extends WatchOpImpl implements BleDevice.onDisConnectedList
 
 
     }
+
+    private int mViewW;
+    private int mViewH;
+
+    /**
+     * 获取体重和身高
+     */
+    private void getWeightAndHeight(){
+        //获取缓存的手表系统信息
+        ExternalFlashMsgResponse watchSysInfo = DeviceStatusManager.getInstance().getExtFlashMsg(getConnectedDevice());
+        if(null == watchSysInfo) {
+            //L.e("watchSysInfo is null");
+            return;
+        }
+        //手表屏幕的宽度
+        mViewW = watchSysInfo.getScreenWidth();
+        //手表屏幕的高度
+        mViewH = watchSysInfo.getScreenHeight();
+        //L.i("mViewW = " + mViewW + " mViewH = " + mViewH);
+        if (mOnDeviceScreenListener!=null) {
+            mOnDeviceScreenListener.onDeviceScreen(mViewW,mViewH);
+        }
+    }
+
+
 
     @Override
     public boolean sendAuthDataToDevice(BluetoothDevice bluetoothDevice, byte[] bytes) {
@@ -288,12 +306,9 @@ class JLWatchManager extends WatchOpImpl implements BleDevice.onDisConnectedList
     }
 
 
-    public void setFilePath(String filePath) {
-        mFilePath = filePath;
-    }
 
-    private int mMaxCount = 1;
-    private int mCurrentCount = 1;
+    private final int mMaxCount = 1;
+    private final int mCurrentCount = 1;
     private boolean mSendWatchIng = false;
 
     /**
@@ -302,49 +317,31 @@ class JLWatchManager extends WatchOpImpl implements BleDevice.onDisConnectedList
      *
      * @return 操作结果
      */
-    public boolean startFlash() {
+    public boolean startCustomizeWatch(String path) {
         mBleDevice.setConnectPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
-        mStartStatus = true;
         if (mInitOk) {
             if (mSendWatchIng) {
                 //避免多次调用发送数据包
                 return true;
             }
             mSendWatchIng = true;
-            mNewWatchPath = mFilePath.substring(mFilePath.lastIndexOf("/"));
-            BleLog.i("表盘完整路径:" + mFilePath + "   手表路径:" + mNewWatchPath);
+            mNewWatchPath = path.substring(path.lastIndexOf("/"));
+            BleLog.i("表盘完整路径:" + path + "   手表路径:" + mNewWatchPath);
+            String outPath = getOutPath(mContext);
+            if (TextUtils.isEmpty(outPath)) {
+                if (mOnBleFlashListener != null) {
+                    mOnBleFlashListener.onFlashFailure(FlashConfig.FLASH_FAIL, "创建文件失败!");
+                }
+                return false;
+            }
 
-
-            listWatchList(new OnWatchOpCallback<ArrayList<FatFile>>() {
+            getCustomWatchBgInfo("/"+CUSTOMIZE_WATCH_NAME, new OnWatchOpCallback<String>() {
                 @Override
-                public void onSuccess(ArrayList<FatFile> fatFiles) {
-                    //成功回调
-                    //fatFiles 是结果，(watch或WATCH)前缀的是表盘文件，(bgp_w或BGP_W)前缀的是自定义背景文件
-                    //可以过滤获取所有Watch文件
-                    for (FatFile fatFile : fatFiles) {
-                        if (fatFile.getName().equalsIgnoreCase(WATCH_NAME)) {
-                            replaceWatchFile(mFilePath, JLWatchManager.this);
-                            return;
-                        }
-                    }
-
-                    if (fatFiles.size() >= WATCH_FILE_SIZE) {
-                        FatFile fileBean = fatFiles.get(fatFiles.size() - 1);
-                        mDeleteWatchPath = fileBean.getPath();
-                    }
-                    if (mNewWatchPath.equalsIgnoreCase(mDeleteWatchPath)) {
-                        //新表盘与旧表盘一致,直接替换
-                        mDeleteWatchPath = "";
-                        mMaxCount = 1;
-                        replaceWatchFile(mFilePath, JLWatchManager.this);
-                    } else {
-                        mMaxCount = 2;
-                        //filePath是表盘文件路径，必须存在
-                        //isNoNeedCheck：是否跳过文件校验
-                        // - false： 表盘文件需要文件校验
-                        // - true :  自定义背景文件不需要文件校验，但需要转换工具进行算法转换
-                        createWatchFile(mFilePath, false, JLWatchManager.this);
-                    }
+                public void onSuccess(String result) {
+                    //成功回调，result是背景文件的路径
+                    //如果result是“null”，则是空路径，不存在自定义背景
+                    //如果result不是“null”，则是背景文件的路径
+                    bitmapConvert(path, outPath, "null".equals(result));
                 }
 
                 @Override
@@ -356,99 +353,103 @@ class JLWatchManager extends WatchOpImpl implements BleDevice.onDisConnectedList
         return mInitOk;
     }
 
-
     /**
-     * 删除表盘
+     * 位图转换
      *
-     * @param filePath
-     * @return
+     * @param filePath 文件路径
+     * @param outPath  出路径
      */
-    public boolean deleteWatch(String filePath, JLManager.OnWatchFileListener<Boolean> listener) {
-        if (mInitOk) {
-            deleteWatchFile(filePath, new OnFatFileProgressListener() {
-                @Override
-                public void onStart(String s) {
-                    if (listener != null) {
-                        listener.onSuccess(true);
-                    }
+    private void bitmapConvert(String filePath, String outPath, boolean newWatch) {
+        //1.初始化图片转换对象
+        BmpConvert bmpConvert = new BmpConvert();
+        //判断算法类型
+        int flag = BmpConvert.TYPE_BR_28; //JL701N-WATCH-SDK 图像转换算法 - RGB
+        //flag = BmpConvert.TYPE_BR_23;   //AC695N-WATCH-SDK 图像转换算法 - RGB
+        //flag = BmpConvert.TYPE_BR_28_ALPHA; //JL701N-WATCH-SDK 图像转换算法 - ARGB
+        //flag = BmpConvert.TYPE_BR_28_RAW;   //JL701N-WATCH-SDK 图像转换算法 - RGB & 不打包封装
+        //flag = BmpConvert.TYPE_BR_28_ALPHA_RAW;  //JL701N-WATCH-SDK 图像转换算法 - ARGB & 不打包封装
+
+        //2.开始图像转换
+        bmpConvert.bitmapConvert(flag,filePath, outPath, new OnConvertListener() {
+            //回调转换开始
+            //path: 输入文件路径
+            @Override
+            public void onStart(String path) {
+
+            }
+
+            //回调转换结束
+            //result： 转换结果
+            //output： 输出文件路径
+            @Override
+            public void onStop(boolean result, String output) {
+                //3.不需要使用图片转换功能时，需要释放图片转换对象
+                bmpConvert.release();
+
+                if (!newWatch) {
+                    replaceWatchFile(outPath, JLBgWatchManager.this);
+                } else {
+                    //filePath是表盘文件路径，必须存在
+                    //isNoNeedCheck：是否跳过文件校验
+                    // - false： 表盘文件需要文件校验
+                    // - true :  自定义背景文件不需要文件校验，但需要转换工具进行算法转换
+                    createWatchFile(outPath, true, JLBgWatchManager.this);
                 }
 
-                @Override
-                public void onProgress(float v) {
 
-                }
-
-                @Override
-                public void onStop(int i) {
-                    if (listener != null) {
-                        listener.onSuccess(false);
-                    }
-                }
-            });
-        }
-        return mInitOk;
+            }
+        });
     }
 
 
-    /**
-     * 设置当前表盘
-     *
-     * @param path
-     * @return
-     */
-    public boolean setCurrentWatch(String path, OnWatchOpCallback<FatFile> listener) {
-        if (mInitOk) {
-            this.setCurrentWatchInfo(path, new OnWatchOpCallback<FatFile>() {
-                @Override
-                public void onSuccess(FatFile fatFile) {
-                    if (listener != null) {
-                        listener.onSuccess(fatFile);
-                    }
+    private String getOutPath(Context context) {
+        try {
+            String filesDir = context.getApplicationContext().getFilesDir().getPath();
+            File externalCacheDir = context.getApplicationContext().getExternalCacheDir();
+            if (externalCacheDir != null) {
+                filesDir = externalCacheDir.getPath();
+            }
+            filesDir = filesDir + File.separator + "watch" + File.separator +CUSTOMIZE_WATCH_NAME;
+            File directory = new File(filesDir);
+            if (!directory.exists()) {
+                boolean newFile = directory.createNewFile();
+                if (!newFile) {
+                    //("创建文件失败!");
                 }
-
-                @Override
-                public void onFailed(BaseError baseError) {
-                    if (listener != null) {
-                        listener.onFailed(baseError);
-                    }
-                }
-
-            });
+            }
+            return filesDir;
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return mInitOk;
+        return  null;
     }
 
     /**
-     * 获取手表保存的文件列表
+     * 使能表盘插入自定义表盘
      *
-     * @param listener OnWatchOpCallback
-     * @return 操作结果
+     * @param fatFilePath 文件路径
      */
-    public boolean getWatchList(JLManager.OnWatchFileListener<ArrayList<FileBean>> listener) {
-        if (mInitOk) {
-            listWatchList(new OnWatchOpCallback<ArrayList<FatFile>>() {
-                @Override
-                public void onSuccess(ArrayList<FatFile> fatFiles) {
-                    if (listener != null) {
-                        ArrayList<FileBean> list = new ArrayList<>();
-                        for (FatFile fatFile : fatFiles) {
-                            list.add(new FileBean(fatFile));
-                        }
-                        listener.onSuccess(list);
-                    }
+    public void enableWatchCustomBg(final String fatFilePath) {
+        enableCustomWatchBg(fatFilePath, new OnWatchOpCallback<FatFile>() {
+            @Override
+            public void onSuccess(FatFile result) {
+                final FatFile custom = result;
+                //成功回调 - FatFile是自定义背景文件信息
+                BleLog.i("使能自定义表盘成功");
+                if (mOnBleFlashListener != null) {
+                    mOnBleFlashListener.onFlashSuccess();
                 }
+            }
 
-                @Override
-                public void onFailed(BaseError baseError) {
-                    if (listener != null) {
-                        listener.onFailed(baseError.getCode(), baseError.getMessage());
-                    }
+            @Override
+            public void onFailed(BaseError error) {
+                BleLog.i("使能自定义表盘失败:"+error.getMessage());
+                if (mOnBleFlashListener != null) {
+                    mOnBleFlashListener.onFlashFailure(FlashConfig.FLASH_FAIL,"使能自定义表盘失败:"+error.getMessage());
                 }
-            });
-        }
-        return mInitOk;
+            }
+        });
     }
-
 
     @Override
     public void OnMtu(int mtu) {
@@ -547,7 +548,6 @@ class JLWatchManager extends WatchOpImpl implements BleDevice.onDisConnectedList
     public void onStart(String s) {
         BleLog.i("onStart:" + s);
         mSendWatchIng = true;
-        mStartStatus = false;
         if (mOnBleFlashListener != null) {
             mOnBleFlashListener.onFlashProgress(0, mCurrentCount, mMaxCount);
         }
@@ -566,61 +566,11 @@ class JLWatchManager extends WatchOpImpl implements BleDevice.onDisConnectedList
     public void onStop(int result) {
         BleLog.i("onStop:" + result);
         mSendWatchIng = false;
-        mStartStatus = false;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             mBleDevice.setConnectPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED);
         }
         if (result == 0) {
-            if (!TextUtils.isEmpty(mDeleteWatchPath)) {
-                BleLog.i("表盘成功,需要删除:" + mDeleteWatchPath);
-                deleteWatchFile(mDeleteWatchPath, new OnFatFileProgressListener() {
-                    @Override
-                    public void onStart(String s) {
-
-                    }
-
-                    @Override
-                    public void onProgress(float v) {
-
-                    }
-
-                    @Override
-                    public void onStop(int i) {
-                        if (i == 0) {
-                            //创建表盘成功,切换到当前表盘
-                            setCurrentWatchInfo(mNewWatchPath, new OnWatchOpCallback<FatFile>() {
-                                @Override
-                                public void onSuccess(FatFile fatFile) {
-                                    if (mOnBleFlashListener != null) {
-                                        mOnBleFlashListener.onFlashSuccess();
-                                    }
-                                    BleLog.i("设置表盘成功:" + (fatFile != null ? fatFile.getPath() : mNewWatchPath));
-                                }
-
-                                @Override
-                                public void onFailed(BaseError baseError) {
-                                }
-                            });
-                        }
-                    }
-                });
-                mDeleteWatchPath = "";
-            } else {
-                //创建表盘成功,切换到当前表盘
-                setCurrentWatchInfo(mNewWatchPath, new OnWatchOpCallback<FatFile>() {
-                    @Override
-                    public void onSuccess(FatFile fatFile) {
-                        BleLog.i("设置表盘成功:" + (fatFile != null ? fatFile.getPath() : mNewWatchPath));
-                        if (mOnBleFlashListener != null) {
-                            mOnBleFlashListener.onFlashSuccess();
-                        }
-                    }
-
-                    @Override
-                    public void onFailed(BaseError baseError) {
-                    }
-                });
-            }
+            enableWatchCustomBg("/"+CUSTOMIZE_WATCH_NAME);
         } else if (result == FatFsErrCode.RES_ERR_SPACE_TO_UPDATE) {
             //空间不足,提示客户删除表盘
             if (mOnBleFlashListener != null) {
@@ -654,10 +604,33 @@ class JLWatchManager extends WatchOpImpl implements BleDevice.onDisConnectedList
         }
         mSendWatchIng = false;
         mBuilder.mAuthOk = false;
-        mStartStatus = false;
         if (mRcspAuth != null) {
             mRcspAuth.destroy();
         }
         BleLog.i("release:释放资源");
+    }
+
+
+    //----------------
+
+
+    public void setOnDeviceScreenListener(OnDeviceScreenListener onDeviceScreenListener) {
+        mOnDeviceScreenListener = onDeviceScreenListener;
+    }
+
+    /**
+     * 设备屏幕侦听器
+     *
+     * @author xing
+     * @date 2023/06/19
+     */
+    public interface OnDeviceScreenListener {
+        /**
+         * 设备屏幕
+         *
+         * @param w w
+         * @param h h
+         */
+        void onDeviceScreen(int w, int h);
     }
 }

@@ -5,11 +5,13 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.content.Context;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
 
+import com.elinkthings.bleotalibrary.config.FlashConfig;
 import com.elinkthings.bleotalibrary.config.OtaConfig;
 import com.elinkthings.bleotalibrary.listener.OnBleOTAListener;
 import com.jieli.jl_bt_ota.constant.BluetoothConstant;
@@ -21,7 +23,6 @@ import com.jieli.jl_bt_ota.interfaces.IUpgradeCallback;
 import com.jieli.jl_bt_ota.model.BluetoothOTAConfigure;
 import com.jieli.jl_bt_ota.model.base.BaseError;
 import com.jieli.jl_bt_ota.model.response.TargetInfoResponse;
-import com.jieli.jl_bt_ota.tool.DeviceReConnectManager;
 import com.pingwang.bluetoothlib.config.BleConfig;
 import com.pingwang.bluetoothlib.device.BleDevice;
 import com.pingwang.bluetoothlib.device.SendDataBean;
@@ -43,9 +44,10 @@ import java.util.UUID;
 class JLOtaManager extends BluetoothOTAManager implements OnBleMtuListener, IUpgradeCallback, OnCharacteristicListener, BleDevice.onDisConnectedListener, OnBleSendResultListener {
 
     public final static String WATCH_OTA_NAME = "watch_ota.ufw";
+    private final static int SEND_INTERVAL = 40;
     private volatile BluetoothGatt mBluetoothGatt;
     private volatile BleDevice mBleDevice;
-    private int mMtu = 245;
+    private int mMtu = 0;
     private OnBleOTAListener mOnBleOTAListener;
     private boolean mInitOk = false;
 
@@ -65,7 +67,7 @@ class JLOtaManager extends BluetoothOTAManager implements OnBleMtuListener, IUpg
 
     private Handler mHandler = new Handler(Looper.getMainLooper()) {
         @Override
-        public void handleMessage( Message msg) {
+        public void handleMessage(Message msg) {
             if (msg.what == 1) {
                 mHandler.removeMessages(1);
                 BleLog.i("onDescriptorWrite超时");
@@ -80,10 +82,11 @@ class JLOtaManager extends BluetoothOTAManager implements OnBleMtuListener, IUpg
     public JLOtaManager(Builder builder) {
         super(builder.mContext);
         //JL的log
-//        JL_Log.setIsSaveLogFile(builder.mContext, true);
+        //        JL_Log.setIsSaveLogFile(builder.mContext, true);
         mOnBleOTAListener = builder.mOnBleOTAListener;
         mFilePath = builder.mFilePath;
         mBleDevice = builder.mBleDevice;
+        mMtu = builder.mMtu;
         onBtDeviceConnection(mBleDevice);
 
     }
@@ -93,6 +96,9 @@ class JLOtaManager extends BluetoothOTAManager implements OnBleMtuListener, IUpg
             BleLog.i("onBtDeviceConnection");
             if (bleDevice == null) {
                 BleLog.i("bleDevice=null");
+                if (mOnBleOTAListener != null) {
+                    mOnBleOTAListener.onOtaFailure(OtaConfig.OTA_FAIL, "bleDevice=null");
+                }
                 return;
             }
             mConnectStatus = true;
@@ -101,7 +107,11 @@ class JLOtaManager extends BluetoothOTAManager implements OnBleMtuListener, IUpg
             mBleDevice.setOnDisConnectedListener(this);
             mBleDevice.setOnCharacteristicListener(this);
             mBleDevice.setOnBleSendResultListener(this);
+            mBleDevice.setOnBleMtuListener(this);
             mBluetoothGatt = bleDevice.getBluetoothGatt();
+            if (mMtu == 0) {
+                mBleDevice.setMtu(FlashConfig.MTU_MAX);
+            }
             if (mBluetoothGatt == null) {
                 BleLog.i("bluetoothGatt=null");
                 return;
@@ -138,15 +148,21 @@ class JLOtaManager extends BluetoothOTAManager implements OnBleMtuListener, IUpg
     private void initBleDeviceInfo() {
         BluetoothOTAConfigure bluetoothOTAConfigure = BluetoothOTAConfigure.createDefault();
         bluetoothOTAConfigure.setPriority(BluetoothOTAConfigure.PREFER_BLE);
+        //默认是500毫秒
+        bluetoothOTAConfigure.setBleIntervalMs(500);
+        //超时时间
+        bluetoothOTAConfigure.setTimeoutMs(10000);
         //是否启用设备认证流程(与固件工程师确认)
         bluetoothOTAConfigure.setUseAuthDevice(true);
         //设置BLE的MTU
         bluetoothOTAConfigure.setMtu(mMtu + 3);
         //是否需要改变BLE的MTU
         bluetoothOTAConfigure.setNeedChangeMtu(true);
-        bluetoothOTAConfigure.setUseJLServer(false);
+        bluetoothOTAConfigure.setUseJLServer(true);
         //设置本地存储OTA文件的路径
         bluetoothOTAConfigure.setFirmwareFilePath(mFilePath);
+        //设置回连
+        bluetoothOTAConfigure.setUseReconnect(false);
         //配置OTA参数
         configure(bluetoothOTAConfigure);
         BleLog.i("配置OTA参数");
@@ -166,7 +182,7 @@ class JLOtaManager extends BluetoothOTAManager implements OnBleMtuListener, IUpg
                     BleLog.i("连接成功,已经在OTA状态了,什么都不处理" + isOTA());
                 } else {
                     //查询强制升级状态
-//                    queryMandatoryUpdate();
+                    //                    queryMandatoryUpdate();
                     mInitOk = true;
                     BleLog.i("连接成功,可以进行OTA升级:" + isOTA());
                     if (mStartOta) {
@@ -223,6 +239,8 @@ class JLOtaManager extends BluetoothOTAManager implements OnBleMtuListener, IUpg
         private Context mContext;
         private OnBleOTAListener mOnBleOTAListener;
         private String mFilePath = "";
+        private int mMtu;
+
 
         public Builder(Context context) {
             mContext = context;
@@ -231,6 +249,11 @@ class JLOtaManager extends BluetoothOTAManager implements OnBleMtuListener, IUpg
 
         public Builder setOnBleOTAListener(OnBleOTAListener onBleOTAListener) {
             mOnBleOTAListener = onBleOTAListener;
+            return this;
+        }
+
+        public Builder setMtu(int mtu) {
+            mMtu = mtu;
             return this;
         }
 
@@ -253,9 +276,10 @@ class JLOtaManager extends BluetoothOTAManager implements OnBleMtuListener, IUpg
     public void onCharacteristicChanged(BluetoothGattCharacteristic characteristic) {
         if (characteristic.getUuid().toString().equalsIgnoreCase(BluetoothConstant.UUID_NOTIFICATION.toString())) {
             byte[] data = characteristic.getValue();
-//            BleLog.i(TAG, "OTA接收的数据:" + BleStrUtils.byte2HexStrToUpperCase(data));
-            if (getConnectedDevice() != null) {
-                onReceiveDeviceData(getConnectedDevice(), data);
+            //            BleLog.i(TAG, "OTA接收的数据:" + BleStrUtils.byte2HexStrToUpperCase(data));
+            BluetoothDevice connectedDevice = getConnectedDevice();
+            if (connectedDevice != null) {
+                onReceiveDeviceData(connectedDevice, data);
             } else {
                 BleLog.i("getConnectedDevice()==null");
             }
@@ -269,7 +293,9 @@ class JLOtaManager extends BluetoothOTAManager implements OnBleMtuListener, IUpg
     public void startOta() {
         try {
             if (mBleDevice != null) {
-                mBleDevice.setConnectPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    mBleDevice.setConnectPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
+                }
             }
             mStartOta = true;
             if (mInitOk) {
@@ -284,7 +310,7 @@ class JLOtaManager extends BluetoothOTAManager implements OnBleMtuListener, IUpg
 
     @Override
     public BluetoothDevice getConnectedDevice() {
-        return mBluetoothGatt != null ? mBluetoothGatt.getDevice() : null;
+        return getConnectedBluetoothGatt() != null ? mBluetoothGatt.getDevice() : null;
     }
 
     @Override
@@ -298,7 +324,7 @@ class JLOtaManager extends BluetoothOTAManager implements OnBleMtuListener, IUpg
         //需要连接的蓝牙设备
         mHandler.removeMessages(1);
         BleLog.i("connectBluetoothDevice:" + bluetoothDevice.getAddress());
-//        DeviceReConnectManager.getInstance(this).setReconnectAddress(null);
+        //        DeviceReConnectManager.getInstance(this).setReconnectAddress(null);
         mNotify = false;
         if (mOnBleOTAListener != null) {
             mOnBleOTAListener.onReconnect(bluetoothDevice.getAddress());
@@ -318,25 +344,23 @@ class JLOtaManager extends BluetoothOTAManager implements OnBleMtuListener, IUpg
         if (bluetoothDevice == null || bytes == null) {
             return false;
         }
-//        BleLog.i(TAG, "OTA发送的数据:" + BleStrUtils.byte2HexStrToUpperCase(bytes));
+        //        BleLog.i(TAG, "OTA发送的数据:" + BleStrUtils.byte2HexStrToUpperCase(bytes));
         return toSendData(bytes);
     }
 
     private synchronized boolean toSendData(byte[] bytes) {
-        int time = 0;
         int mtu = mMtu;
         int dataLen = bytes.length;
         int blockCount = dataLen / mtu;
+
         boolean status = true;
         for (int i = 0; i < blockCount; i++) {
             byte[] mBlockData = new byte[mtu];
             System.arraycopy(bytes, i * mtu, mBlockData, 0, mBlockData.length);
-            time = time + mBlockData.length;
             SendDataBean sendDataBean = new SendDataBean(mBlockData, BluetoothConstant.UUID_WRITE, BleConfig.WRITE_DATA, BluetoothConstant.UUID_SERVICE);
             status = sendDataOta(sendDataBean);
         }
         if (0 != dataLen % mtu) {
-            SystemClock.sleep(20);
             byte[] noBlockData = new byte[dataLen % mtu];
             System.arraycopy(bytes, dataLen - (dataLen % mtu), noBlockData, 0, noBlockData.length);
             SendDataBean sendDataBean = new SendDataBean(noBlockData, BluetoothConstant.UUID_WRITE, BleConfig.WRITE_DATA, BluetoothConstant.UUID_SERVICE);
@@ -346,34 +370,32 @@ class JLOtaManager extends BluetoothOTAManager implements OnBleMtuListener, IUpg
         return status;
     }
 
+    /**
+     * 发送数据OTA
+     *
+     * @param sendDataBean 发送数据bean
+     * @return boolean
+     */
     private boolean sendDataOta(SendDataBean sendDataBean) {
+        boolean status;
+        int time = SEND_INTERVAL;
+        SystemClock.sleep(time);
         if (mBleDevice == null) {
             return false;
         }
-        boolean status = mBleDevice.sendDataOta(sendDataBean);
+        status = mBleDevice.sendDataOta(sendDataBean);
+        String sendData = BleStrUtils.byte2HexStrToUpperCase(sendDataBean.getHex());
         if (!status) {
-            SystemClock.sleep(15);
+            time -= 5;
+            SystemClock.sleep(time);
             if (mBleDevice == null) {
                 return false;
             }
+            BleLog.i("发送数据失败,重发:" + sendData);
             status = mBleDevice.sendDataOta(sendDataBean);
             if (!status) {
-                SystemClock.sleep(10);
-                if (mBleDevice == null) {
-                    return false;
-                }
-                status = mBleDevice.sendDataOta(sendDataBean);
-                if (!status) {
-                    SystemClock.sleep(5);
-                    if (mBleDevice == null) {
-                        return false;
-                    }
-                    status = mBleDevice.sendDataOta(sendDataBean);
-                    if (!status) {
-                        BleLog.i("发送数据失败,重发:" + BleStrUtils.byte2HexStrToUpperCase(sendDataBean.getHex()));
-                        return false;
-                    }
-                }
+                BleLog.i("发送数据失败,停止重发:" + sendData);
+                return false;
             }
         }
         return true;
@@ -386,7 +408,9 @@ class JLOtaManager extends BluetoothOTAManager implements OnBleMtuListener, IUpg
             unregisterBluetoothCallback(mBtEventCallback);
             mHandler.removeCallbacksAndMessages(null);
             if (mBleDevice != null) {
-                mBleDevice.setConnectPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    mBleDevice.setConnectPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED);
+                }
             }
             clear();
             super.release();
@@ -430,8 +454,8 @@ class JLOtaManager extends BluetoothOTAManager implements OnBleMtuListener, IUpg
             BleLog.i("onNotifyResult:" + result);
             if (result) {
                 mHandler.removeMessages(1);
-//            mNotify = true;
-//            onBtDeviceConnection(mBleDevice);
+                //            mNotify = true;
+                //            onBtDeviceConnection(mBleDevice);
                 mHandler.sendEmptyMessageDelayed(1, 5000);
             } else {
                 //OTA 错误,失败
@@ -449,7 +473,7 @@ class JLOtaManager extends BluetoothOTAManager implements OnBleMtuListener, IUpg
             onMtuChanged(getConnectedBluetoothGatt(), mtu, 0);
         }
         mMtu = mtu - 3;
-        BleLog.i("OnMtu:" + mtu);
+        BleLog.i("MTU:" + mtu);
     }
 
 
@@ -464,21 +488,28 @@ class JLOtaManager extends BluetoothOTAManager implements OnBleMtuListener, IUpg
         }
     }
 
+    /**
+     * 需要回连的回调
+     *
+     * <p>注意: 1.仅连接BLE通讯通道
+     * 2.用于单备份OTA</p>
+     *
+     * @param addr              回连设备的MAC地址
+     * @param isNewReconnectWay 是否使用新回连方式
+     */
     @Override
-    public void onNeedReconnect(String addr, boolean b) {
+    public void onNeedReconnect(String addr, boolean isNewReconnectWay) {
         //回调需要回连的设备地址,单备份的产品回连后需要重新连接进行后面的升级操作
         mConnectStatus = false;
         clear();
-        BleLog.i("onNeedReconnect:" + addr + " status:" + b);
-        DeviceReConnectManager.getInstance(this).setReconnectAddress(addr);
-//        if (mOnBleOTAListener != null) {
-//            mOnBleOTAListener.onReconnect(addr);
-//        }
+        BleLog.i("onNeedReconnect:" + addr + " status:" + isNewReconnectWay);
+        if (mOnBleOTAListener != null) {
+            mOnBleOTAListener.onReconnect(addr);
+        }
     }
 
     @Override
     public void onProgress(int type, float progress) {
-        BleLog.i("onProgress:" + progress + " type:" + type);
         if (mOnBleOTAListener != null) {
             mOnBleOTAListener.onOtaProgress(progress, type + 1, 2);
         }
@@ -507,6 +538,7 @@ class JLOtaManager extends BluetoothOTAManager implements OnBleMtuListener, IUpg
     public void onError(BaseError error) {
         mHandler.removeMessages(1);
         int code = error.getCode();
+        BleLog.i("onError:" + code + " msg:" + error.getMessage());
         //OTA 错误,失败
         if (mOnBleOTAListener != null) {
             mOnBleOTAListener.onOtaFailure(OtaConfig.OTA_FAIL, error.getMessage());

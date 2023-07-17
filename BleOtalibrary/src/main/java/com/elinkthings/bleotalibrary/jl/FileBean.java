@@ -14,7 +14,7 @@ public class FileBean implements Parcelable {
     private long size;
     private String name;
     private boolean isDir;
-    private long modifyTime;
+    private String modifyTime;
     private String path;
     public static final Creator<FileBean> CREATOR = new Creator<FileBean>() {
         @Override
@@ -44,7 +44,7 @@ public class FileBean implements Parcelable {
         this.size = in.readLong();
         this.name = in.readString();
         this.isDir = in.readByte() != 0;
-        this.modifyTime = in.readLong();
+        this.modifyTime = in.readString();
         this.path = in.readString();
     }
 
@@ -72,11 +72,11 @@ public class FileBean implements Parcelable {
         this.isDir = dir;
     }
 
-    public long getModifyTime() {
-        return this.modifyTime;
+    public String getModifyTime() {
+        return modifyTime;
     }
 
-    public void setModifyTime(long modifyTime) {
+    public void setModifyTime(String modifyTime) {
         this.modifyTime = modifyTime;
     }
 
@@ -103,7 +103,7 @@ public class FileBean implements Parcelable {
         dest.writeLong(this.size);
         dest.writeString(this.name);
         dest.writeByte((byte)(this.isDir ? 1 : 0));
-        dest.writeLong(this.modifyTime);
+        dest.writeString(this.modifyTime);
         dest.writeString(this.path);
     }
 }

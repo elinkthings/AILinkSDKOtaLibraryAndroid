@@ -98,7 +98,7 @@ public class NetstrapPacket {
 
     public final static int PDU_TYPE_SEND_BLE_STR_RSP = 0x1606;
 
-    public final static int PDU_TYPE_SEND_SINGLE_TONE_RSP= 0x1607;
+    public final static int PDU_TYPE_SEND_SINGLE_TONE_RSP = 0x1607;
 
 
     public final static int PDU_TYPE_GOTER_SINGLE_TONE_REQ = 0x1900;
@@ -226,6 +226,7 @@ public class NetstrapPacket {
     public String getIpaddr() {
         return ipaddr;
     }
+
     public String getMaskddr() {
         return maskaddr;
     }
@@ -271,140 +272,81 @@ public class NetstrapPacket {
 
         switch (cmdId) {
             case PDU_TYPE_VBATT_CAL:
-                buf = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN)
-                        .putShort((short) cmdId)
-                        .putShort((short) 4)
-                        .put(rawData);
+                buf = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putShort((short) cmdId).putShort((short) 4).put(rawData);
                 break;
             case PDU_TYPE_IO_VOL_CAL:
-                buf = ByteBuffer.allocate(9).order(ByteOrder.LITTLE_ENDIAN)
-                        .putShort((short) cmdId)
-                        .putShort((short) 5)
-                        .put(rawData);
+                buf = ByteBuffer.allocate(9).order(ByteOrder.LITTLE_ENDIAN).putShort((short) cmdId).putShort((short) 5).put(rawData);
                 break;
             case PDU_TYPE_TEMP_CAL:
-                buf = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN)
-                        .putShort((short) cmdId)
-                        .putShort((short) 4)
-                        .put(rawData);
+                buf = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putShort((short) cmdId).putShort((short) 4).put(rawData);
                 break;
 
             case PDU_TYPE_RESET_REQ:
-                buf = ByteBuffer.allocate(6).order(ByteOrder.LITTLE_ENDIAN)
-                        .putShort((short) cmdId)
-                        .putShort((short) 0);
+                buf = ByteBuffer.allocate(6).order(ByteOrder.LITTLE_ENDIAN).putShort((short) cmdId).putShort((short) 0);
                 break;
             case PDU_TYPE_SEND_BLE_STR_REQ:
-                buf = ByteBuffer.allocate(4+rawData.length).order(ByteOrder.LITTLE_ENDIAN)
-                        .putShort((short) cmdId)
-                        .putShort((short) rawData.length)
-                        .put(rawData);
+                buf = ByteBuffer.allocate(4 + rawData.length).order(ByteOrder.LITTLE_ENDIAN).putShort((short) cmdId).putShort((short) rawData.length).put(rawData);
                 break;
 
             case PDU_TYPE_SEND_SINGLE_TONE_REQ:
-                buf = ByteBuffer.allocate(10).order(ByteOrder.LITTLE_ENDIAN)
-                        .putShort((short) cmdId)
-                        .putShort((short) rawData.length)
-                        .put(rawData);
+                buf = ByteBuffer.allocate(10).order(ByteOrder.LITTLE_ENDIAN).putShort((short) cmdId).putShort((short) rawData.length).put(rawData);
                 break;
 
             case PDU_TYPE_SET_DEVICE_MODE:
-                buf = ByteBuffer.allocate(5).order(ByteOrder.LITTLE_ENDIAN)
-                        .putShort((short) cmdId)
-                        .putShort((short) 1)
-                        .put(devicemode);
+                buf = ByteBuffer.allocate(5).order(ByteOrder.LITTLE_ENDIAN).putShort((short) cmdId).putShort((short) 1).put(devicemode);
                 break;
 
             case PDU_TYPE_READ_DEVICE_MODE:
-                buf = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
-                        .putShort((short) cmdId)
-                        .putShort((short) 0);
+                buf = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putShort((short) cmdId).putShort((short) 0);
                 break;
 
             case PDU_TYPE_CMD_BLEWIFI_REQ_WIFI_STATUS:
-                buf = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
-                        .putShort((short) cmdId)
-                        .putShort((short) 0);
+                buf = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putShort((short) cmdId).putShort((short) 0);
                 break;
             case PDU_TYPE_WRITE_WIFI_MAC_REQ:
-                buf = ByteBuffer.allocate(10).order(ByteOrder.LITTLE_ENDIAN)
-                        .putShort((short) cmdId)
-                        .putShort((short) 6)
-                        .put(rawData);
+                buf = ByteBuffer.allocate(10).order(ByteOrder.LITTLE_ENDIAN).putShort((short) cmdId).putShort((short) 6).put(rawData);
                 break;
             case PDU_TYPE_READ_WIFI_MAC_REQ:
-                buf = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
-                        .putShort((short) cmdId)
-                        .putShort((short) 0);
+                buf = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putShort((short) cmdId).putShort((short) 0);
                 break;
             case PDU_TYPE_WRITE_BLE_MAC_REQ:
-                buf = ByteBuffer.allocate(10).order(ByteOrder.LITTLE_ENDIAN)
-                        .putShort((short) cmdId)
-                        .putShort((short) 6)
-                        .put(rawData);
+                buf = ByteBuffer.allocate(10).order(ByteOrder.LITTLE_ENDIAN).putShort((short) cmdId).putShort((short) 6).put(rawData);
                 break;
 
             case PDU_TYPE_READ_BLE_MAC_REQ:
-                buf = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
-                        .putShort((short) cmdId)
-                        .putShort((short) 0);
+                buf = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putShort((short) cmdId).putShort((short) 0);
                 break;
 
             case PDU_TYPE_CMD_SCAN_REQ:
-                buf = ByteBuffer.allocate(6).order(ByteOrder.LITTLE_ENDIAN)
-                        .putShort((short) cmdId)
-                        .putShort((short) 2)
-                        .put((byte) (showHidden ? 1 : 0))
-                        .put((byte) scanType);
+                buf = ByteBuffer.allocate(6).order(ByteOrder.LITTLE_ENDIAN).putShort((short) cmdId).putShort((short) 2).put((byte) (showHidden ? 1 : 0)).put((byte) scanType);
                 break;
 
             case PDU_TYPE_CMD_CONNECT_REQ:
                 int temp_len = password.length();
-                buf = ByteBuffer.allocate(12 + password.length()).order(ByteOrder.LITTLE_ENDIAN)
-                        .putShort((short) cmdId)
-                        .putShort((short) (8 + password.length()))
-                        .put(bssid)
-                        .put((byte) Ap_ConnectStatus)
-                        .put((byte) password.length())
-                        .put(password.getBytes());
+                buf = ByteBuffer.allocate(12 + password.length()).order(ByteOrder.LITTLE_ENDIAN).putShort((short) cmdId).putShort((short) (8 + password.length())).put(bssid).put((byte) Ap_ConnectStatus).put((byte) password.length()).put(password.getBytes());
                 break;
 
             case PDU_TYPE_CMD_READ_DEVICE_INFO_REQ:
             case PDU_TYPE_CMD_OTA_VERSION_REQ:
-                buf = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
-                        .putShort((short) cmdId)
-                        .putShort((short) 0);
+                buf = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putShort((short) cmdId).putShort((short) 0);
                 break;
 
             case PDU_TYPE_CMD_WRITE_DEVICE_INFO_REQ:
-                buf = ByteBuffer.allocate(11 + manufactureName.length()).order(ByteOrder.LITTLE_ENDIAN)
-                        .putShort((short) cmdId)
-                        .putShort((short) (7 + manufactureName.length()))
-                        .put(deviceId)
-                        .put((byte) manufactureName.length())
-                        .put(manufactureName.getBytes());
+                buf = ByteBuffer.allocate(11 + manufactureName.length()).order(ByteOrder.LITTLE_ENDIAN).putShort((short) cmdId).putShort((short) (7 + manufactureName.length())).put(deviceId).put((byte) manufactureName.length()).put(manufactureName.getBytes());
                 break;
 
             case PDU_TYPE_CMD_OTA_UPGRADE_REQ:
-                buf = ByteBuffer.allocate(30).order(ByteOrder.LITTLE_ENDIAN)
-                        .putShort((short) cmdId)
-                        .putShort((short) 26)
-                        .putShort((short) maxRxOctet)
-                        .put(rawData);
+                buf = ByteBuffer.allocate(30).order(ByteOrder.LITTLE_ENDIAN).putShort((short) cmdId).putShort((short) 26).putShort((short) maxRxOctet).put(rawData);
                 break;
 
             case PDU_TYPE_CMD_OTA_RAW_DATA_REQ:
-                buf = ByteBuffer.allocate(4 + rawData.length).order(ByteOrder.LITTLE_ENDIAN)
-                        .putShort((short) cmdId)
-                        .putShort((short) rawData.length)
-                        .put(rawData);
+                buf = ByteBuffer.allocate(4 + rawData.length).order(ByteOrder.LITTLE_ENDIAN).putShort((short) cmdId).putShort((short) rawData.length).put(rawData);
                 break;
 
             case PDU_TYPE_CMD_OTA_END_REQ:
-                buf = ByteBuffer.allocate(5).order(ByteOrder.LITTLE_ENDIAN)
-                        .putShort((short) cmdId)
-                        .putShort((short) 1)
-                        .put((byte) reason);
+                buf = ByteBuffer.allocate(5).order(ByteOrder.LITTLE_ENDIAN).putShort((short) cmdId).putShort((short) 1).put((byte) reason);
+                break;
+            default:
                 break;
 
         }
@@ -417,17 +359,11 @@ public class NetstrapPacket {
 
         switch (cmdId) {
             case PDU_TYPE_CMD_SCAN_REQ:
-                str.append("[SCAN_REQ]\n")
-                        .append("showHidden: " + showHidden + "\n")
-                        .append("scanType: " + scanType + "\n");
+                str.append("[SCAN_REQ]\n").append("showHidden: " + showHidden + "\n").append("scanType: " + scanType + "\n");
                 break;
 
             case PDU_TYPE_EVT_SCAN_RSP:
-                str.append("[SCAN_RSP]\n")
-                        .append("ssid: " + ssid + "\n")
-                        .append("bssid: " + getMacAddress(bssid) + "\n")
-                        .append("authMode: " + getAuthModeDescription(authMode) + "\n")
-                        .append("rssi: " + rssi + "\n");
+                str.append("[SCAN_RSP]\n").append("ssid: " + ssid + "\n").append("bssid: " + getMacAddress(bssid) + "\n").append("authMode: " + getAuthModeDescription(authMode) + "\n").append("rssi: " + rssi + "\n");
                 break;
 
             case PDU_TYPE_EVT_SCAN_END:
@@ -435,14 +371,11 @@ public class NetstrapPacket {
                 break;
 
             case PDU_TYPE_CMD_CONNECT_REQ:
-                str.append("[CONNECT_REQ]\n")
-                        .append("bssid: " + getMacAddress(bssid) + "\n")
-                        .append("password: " + password + "\n");
+                str.append("[CONNECT_REQ]\n").append("bssid: " + getMacAddress(bssid) + "\n").append("password: " + password + "\n");
                 break;
 
             case PDU_TYPE_EVT_CONNECT_RSP:
-                str.append("[CONNECT_RSP]\n")
-                        .append("status: " + (connectStatus == CONNECT_STATUS_SUCCESS ? "SUCCESS" : "FAIL") + "\n");
+                str.append("[CONNECT_RSP]\n").append("status: " + (connectStatus == CONNECT_STATUS_SUCCESS ? "SUCCESS" : "FAIL") + "\n");
                 break;
 
             case PDU_TYPE_CMD_READ_DEVICE_INFO_REQ:
@@ -450,20 +383,15 @@ public class NetstrapPacket {
                 break;
 
             case PDU_TYPE_EVT_READ_DEVICE_INFO_RSP:
-                str.append("[READ_DEVICE_RSP]\n")
-                        .append("deviceId: " + getMacAddress(deviceId) + "\n")
-                        .append("manufactureName: " + manufactureName + "\n");
+                str.append("[READ_DEVICE_RSP]\n").append("deviceId: " + getMacAddress(deviceId) + "\n").append("manufactureName: " + manufactureName + "\n");
                 break;
 
             case PDU_TYPE_CMD_WRITE_DEVICE_INFO_REQ:
-                str.append("[WRITE_DEVICE_REQ]\n")
-                        .append("deviceId: " + getMacAddress(deviceId) + "\n")
-                        .append("manufactureName: " + manufactureName + "\n");
+                str.append("[WRITE_DEVICE_REQ]\n").append("deviceId: " + getMacAddress(deviceId) + "\n").append("manufactureName: " + manufactureName + "\n");
                 break;
 
             case PDU_TYPE_EVT_WRITE_DEVICE_INFO_RSP:
-                str.append("[WRITE_DEVICE_RSP]\n")
-                        .append("status: " + writeStatus + "\n");
+                str.append("[WRITE_DEVICE_RSP]\n").append("status: " + writeStatus + "\n");
                 break;
 
             case PDU_TYPE_CMD_OTA_VERSION_REQ:
@@ -471,27 +399,20 @@ public class NetstrapPacket {
                 break;
 
             case PDU_TYPE_EVT_OTA_VERSION_RSP:
-                str.append("[OTA_VERSION_RSP]\n")
-                        .append("status: " + status + "\n")
-                        .append("projectId: " + String.format("0x%04X", projectId) + "\n")
-                        .append("chipId: " + String.format("0x%04X", chipId) + "\n")
-                        .append("fwId: " + String.format("0x%04X", fwId) + "\n");
+                str.append("[OTA_VERSION_RSP]\n").append("status: " + status + "\n").append("projectId: " + String.format("0x%04X", projectId) + "\n").append("chipId: " + String.format("0x%04X", chipId) + "\n").append("fwId: " + String.format("0x%04X", fwId) + "\n");
                 break;
 
             case PDU_TYPE_CMD_OTA_UPGRADE_REQ:
-                str.append("[OTA_UPGRADE_REQ]\n")
-                        .append("maxRxOctet: " + maxRxOctet + "\n");
+                str.append("[OTA_UPGRADE_REQ]\n").append("maxRxOctet: " + maxRxOctet + "\n");
                 break;
 
             case PDU_TYPE_EVT_OTA_UPGRADE_RSP:
-                str.append("[OTA_UPGRADE_RSP]\n")
-                        .append("status: " + status + "\n");
+                str.append("[OTA_UPGRADE_RSP]\n").append("status: " + status + "\n");
                 break;
 
             case PDU_TYPE_CMD_OTA_RAW_DATA_REQ:
 
-                str.append("[OTA_RAW_DATA_REQ]\n")
-                        .append("rawData.length: " + rawData.length + "\n");
+                str.append("[OTA_RAW_DATA_REQ]\n").append("rawData.length: " + rawData.length + "\n");
                 break;
 
             case PDU_TYPE_EVT_OTA_RAW_DATA_RSP:
@@ -499,64 +420,52 @@ public class NetstrapPacket {
                 break;
 
             case PDU_TYPE_CMD_OTA_END_REQ:
-                str.append("[OTA_END_REQ]\n")
-                        .append("reason: " + reason + "\n");
+                str.append("[OTA_END_REQ]\n").append("reason: " + reason + "\n");
                 break;
 
             case PDU_TYPE_EVT_OTA_END_RSP:
-                str.append("[OTA_END_RSP]\n")
-                        .append("reason: " + reason + "\n");
+                str.append("[OTA_END_RSP]\n").append("reason: " + reason + "\n");
                 break;
             case PDU_TYPE_VBATT_CAL_RSP:
-                str.append("[VBATT_CAL_END_RSP]\n")
-                        .append("reason: " + reason + "\n");
+                str.append("[VBATT_CAL_END_RSP]\n").append("reason: " + reason + "\n");
                 break;
 
             case PDU_TYPE_IO_VOL_CAL_RSP:
-                str.append("[IO_VOL_CAL_END_RSP]\n")
-                        .append("reason: " + reason + "\n");
+                str.append("[IO_VOL_CAL_END_RSP]\n").append("reason: " + reason + "\n");
                 break;
 
             case PDU_TYPE_TEMP_CAL_RSP:
-                str.append("[TEMP_CAL_END_RSP]\n")
-                        .append("reason: " + reason + "\n");
+                str.append("[TEMP_CAL_END_RSP]\n").append("reason: " + reason + "\n");
                 break;
             case PDU_TYPE_RESET_RSP:
-                str.append("[PDU_TYPE_RESET_RSP]\n")
-                        .append("reason: " + reason + "\n");
+                str.append("[PDU_TYPE_RESET_RSP]\n").append("reason: " + reason + "\n");
                 break;
             case PDU_TYPE_WRITE_WIFI_MAC_RSP:
-                str.append("[PDU_TYPE_WRITE_WIFI_MAC_RSP]\n")
-                        .append("reason: " + reason + "\n");
+                str.append("[PDU_TYPE_WRITE_WIFI_MAC_RSP]\n").append("reason: " + reason + "\n");
                 break;
             case PDU_TYPE_WRITE_BLE_MAC_RSP:
-                str.append("[PDU_TYPE_WRITE_BLE_MAC_RSP]\n")
-                        .append("reason: " + reason + "\n");
+                str.append("[PDU_TYPE_WRITE_BLE_MAC_RSP]\n").append("reason: " + reason + "\n");
                 break;
             case PDU_TYPE_READ_WIFI_MAC_RSP:
-                str.append("[PDU_TYPE_READ_WIFI_MAC_RSP]\n")
-                        .append("Wifi Mac: " + String.format("%02X-%02X-%02X-%02X-%02X-%02X", WiFiMac[0], WiFiMac[1], WiFiMac[2], WiFiMac[3], WiFiMac[4], WiFiMac[5]) + "\n");
+                str.append("[PDU_TYPE_READ_WIFI_MAC_RSP]\n").append("Wifi Mac: " + String.format("%02X-%02X-%02X-%02X-%02X-%02X", WiFiMac[0], WiFiMac[1], WiFiMac[2], WiFiMac[3], WiFiMac[4], WiFiMac[5]) + "\n");
 
                 break;
             case PDU_TYPE_READ_BLE_MAC_RSP:
-                str.append("[PDU_TYPE_READ_BLE_MAC_RSP]\n")
-                        .append("Ble Mac: " + String.format("%02X-%02X-%02X-%02X-%02X-%02X", bleMac[0], bleMac[1], bleMac[2], bleMac[3], bleMac[4], bleMac[5]) + "\n");
+                str.append("[PDU_TYPE_READ_BLE_MAC_RSP]\n").append("Ble Mac: " + String.format("%02X-%02X-%02X-%02X-%02X-%02X", bleMac[0], bleMac[1], bleMac[2], bleMac[3], bleMac[4], bleMac[5]) + "\n");
                 break;
             case PDU_TYPE_SEND_BLE_STR_RSP:
-                str.append("[PDU_TYPE_SEND_BLE_STR_RSP]\n")
-                        .append("status: " + reason + "\n");
+                str.append("[PDU_TYPE_SEND_BLE_STR_RSP]\n").append("status: " + reason + "\n");
                 break;
             case PDU_TYPE_SET_DEVICE_MODE_RSP:
-                str.append("[PDU_TYPE_SET_DEVICE_MODE_RSP]\n")
-                        .append("status: " + reason + "\n");
+                str.append("[PDU_TYPE_SET_DEVICE_MODE_RSP]\n").append("status: " + reason + "\n");
                 break;
             case PDU_TYPE_READ_DEVICE_MODE_RSP:
-                str.append("[PDU_TYPE_READ_DEVICE_MODE_RSP]\n")
-                        .append("Mode: " + reason + "\n");
+                str.append("[PDU_TYPE_READ_DEVICE_MODE_RSP]\n").append("Mode: " + reason + "\n");
                 break;
             case PDU_TYPE_SEND_SINGLE_TONE_RSP:
-                str.append("[PDU_TYPE_SEND_SINGLE_TONE_RSP]\n")
-                        .append("status: " + reason + "\n");
+                str.append("[PDU_TYPE_SEND_SINGLE_TONE_RSP]\n").append("status: " + reason + "\n");
+                break;
+            default:
                 break;
         }
 
@@ -576,21 +485,21 @@ public class NetstrapPacket {
         return packet;
     }
 
-    public static NetstrapPacket createBleStringPacket(byte[] bInputStr){
+    public static NetstrapPacket createBleStringPacket(byte[] bInputStr) {
         NetstrapPacket packet = new NetstrapPacket();
         packet.cmdId = PDU_TYPE_SEND_BLE_STR_REQ;
         packet.rawData = bInputStr;
         return packet;
     }
 
-    public static NetstrapPacket createDeviceModePacket(byte iMode){
+    public static NetstrapPacket createDeviceModePacket(byte iMode) {
         NetstrapPacket packet = new NetstrapPacket();
         packet.cmdId = PDU_TYPE_SET_DEVICE_MODE;
         packet.devicemode = iMode;
         return packet;
     }
 
-    public static NetstrapPacket createReadDeviceModePacket(){
+    public static NetstrapPacket createReadDeviceModePacket() {
         NetstrapPacket packet = new NetstrapPacket();
         packet.cmdId = PDU_TYPE_READ_DEVICE_MODE;
         return packet;
@@ -602,7 +511,7 @@ public class NetstrapPacket {
         return packet;
     }
 
-    public static NetstrapPacket createWriteBleMacPacket(byte[] bMac){
+    public static NetstrapPacket createWriteBleMacPacket(byte[] bMac) {
         NetstrapPacket packet = new NetstrapPacket();
         packet.cmdId = PDU_TYPE_WRITE_BLE_MAC_REQ;
         packet.rawData = bMac;
@@ -615,7 +524,7 @@ public class NetstrapPacket {
         return packet;
     }
 
-    public static NetstrapPacket createReadDeviceWiFiInfoPacket(){
+    public static NetstrapPacket createReadDeviceWiFiInfoPacket() {
         NetstrapPacket packet = new NetstrapPacket();
         packet.cmdId = PDU_TYPE_CMD_BLEWIFI_REQ_WIFI_STATUS;
         return packet;
@@ -736,27 +645,25 @@ public class NetstrapPacket {
         return packet;
     }
 
-    public static synchronized List<NetstrapPacket> decodePacket(byte[] data)
-    {
+    public static synchronized List<NetstrapPacket> decodePacket(byte[] data) {
         StringBuilder log = new StringBuilder();
         List<NetstrapPacket> ls = new ArrayList<>();
 
 
         // full buffer
-        if( rxBuffer == null )
+        if (rxBuffer == null) {
             rxBuffer = ByteBuffer.allocate(1024).order(ByteOrder.LITTLE_ENDIAN);
+        }
 
         rxBuffer.put(data);
         currentLength += data.length;
         log.append("in: " + data.length + ", all: " + currentLength + ", ");
 
         // check whether PDU is complete
-        while(true)
-        {
+        while (true) {
             short aShort = rxBuffer.getShort(2);
             int allPacketLength = aShort + 4;
-            if( currentLength >= allPacketLength )
-            {
+            if (currentLength >= allPacketLength) {
                 NetstrapPacket rxPacket = new NetstrapPacket();
                 rxPacket.cmdId = rxBuffer.getShort(0);
 
@@ -836,12 +743,10 @@ public class NetstrapPacket {
                 // Log.e("aaaaaaaaaaaaaaaaaaa = " + currentLength, "<NetstrapPacket> decodePacket = " + ls.size() + " allPacketLength = " + allPacketLength );
 
                 ls.add(rxPacket);
-            }
-            else
-            {
+            } else {
                 currentLength = 0;
                 // Log.e("bbbbbbbbbbbbbbbbbbbbbb = " + currentLength, "<NetstrapPacket> decodePacket = " + ls.size() + " allPacketLength = " + allPacketLength );
-               break;
+                break;
             }
         }
         log.append("rx_pkt: " + ls.size());
@@ -859,8 +764,9 @@ public class NetstrapPacket {
 
         // deviceId
         byte[] deviceId = new byte[deviceWiFiMACLen];
-        for (int i = 0; i < deviceWiFiMACLen; i++)
+        for (int i = 0; i < deviceWiFiMACLen; i++) {
             deviceId[i] = buf.order(ByteOrder.BIG_ENDIAN).get(deviceWifiMacOffset + i);
+        }
         pkt.WiFiMac = deviceId;
 
 
@@ -873,8 +779,9 @@ public class NetstrapPacket {
 
         // deviceId
         byte[] deviceId = new byte[devicebleMACLen];
-        for (int i = 0; i < devicebleMACLen; i++)
+        for (int i = 0; i < devicebleMACLen; i++) {
             deviceId[i] = buf.order(ByteOrder.BIG_ENDIAN).get(devicebleMacOffset + i);
+        }
         pkt.bleMac = deviceId;
 
 
@@ -884,26 +791,27 @@ public class NetstrapPacket {
 
         int ssidLength = buf.get(5);
         byte[] ssid = new byte[ssidLength];
-        for (int i = 0; i < ssidLength; i++)
+        for (int i = 0; i < ssidLength; i++) {
             ssid[i] = buf.get(i + 6);
+        }
         pkt.ssid = new String(ssid);
 
 
         byte[] bssid = new byte[6];
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 6; i++) {
             bssid[i] = buf.get(i + 6 + ssidLength);
+        }
 
-        byte[] ip=new byte[12];
+        byte[] ip = new byte[12];
         int[] IPaddr = new int[12];
-        for (int i = 0; i < 12; i++){
-            ip[i]=buf.get(i + 12 + ssidLength);
-            if(ip[i]<0) {
+        for (int i = 0; i < 12; i++) {
+            ip[i] = buf.get(i + 12 + ssidLength);
+            if (ip[i] < 0) {
                 IPaddr[i] = ip[i] + 256;
-            }else{
+            } else {
                 IPaddr[i] = ip[i];
             }
         }
-
 
 
         pkt.ipaddr = String.format("%d.%d.%d.%d", IPaddr[0], IPaddr[1], IPaddr[2], IPaddr[3]);
@@ -916,7 +824,7 @@ public class NetstrapPacket {
 
     private static void decodeScanRsp(NetstrapPacket pkt, ByteBuffer buf) {
 
-        try{
+        try {
             String filename = "output.txt";
             File myFile = new File(Environment.getExternalStorageDirectory(), filename);
             if (!myFile.exists()) {
@@ -933,11 +841,10 @@ public class NetstrapPacket {
             channel.write(buf);
 
 
-
             // close the channel
             channel.close();
 
-        }catch(IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
@@ -945,14 +852,16 @@ public class NetstrapPacket {
         // ssid
         int ssidLength = buf.get(4);
         byte[] ssid = new byte[ssidLength];
-        for (int i = 0; i < ssidLength; i++)
+        for (int i = 0; i < ssidLength; i++) {
             ssid[i] = buf.get(i + 5);
+        }
         pkt.ssid = new String(ssid);
 
         // bssid
         byte[] bssid = new byte[6];
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 6; i++) {
             bssid[i] = buf.get(i + 5 + ssidLength);
+        }
         pkt.bssid = bssid;
 
         // authMode
@@ -970,15 +879,17 @@ public class NetstrapPacket {
 
         // deviceId
         byte[] deviceId = new byte[deviceIdLen];
-        for (int i = 0; i < deviceIdLen; i++)
+        for (int i = 0; i < deviceIdLen; i++) {
             deviceId[i] = buf.get(deviceIdOffset + i);
+        }
         pkt.deviceId = deviceId;
 
         // manufactureName
         int manufactureNameLength = buf.get(manufactureNameLengthOffset);
         byte[] manufactureName = new byte[manufactureNameLength];
-        for (int i = 0; i < manufactureNameLength; i++)
+        for (int i = 0; i < manufactureNameLength; i++) {
             manufactureName[i] = buf.get(manufactureNameOffset + i);
+        }
         pkt.manufactureName = new String(manufactureName);
     }
 
@@ -1016,6 +927,8 @@ public class NetstrapPacket {
             case AUTH_MODE_WPA2_ENTERPRISE_PSK:
                 description = "WPA2-Enterprise";
                 break;
+            default:
+                break;
         }
 
         return description;
@@ -1037,21 +950,21 @@ public class NetstrapPacket {
         System.out.println(otaVerReq);
         dump(otaVerReq.getBytes());
 
-        List<NetstrapPacket> ls = NetstrapPacket.decodePacket(new byte[] {0x00, 0x11, 0x09, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00});
+        List<NetstrapPacket> ls = NetstrapPacket.decodePacket(new byte[]{0x00, 0x11, 0x09, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00});
         for (NetstrapPacket pkt : ls) {
             System.out.println(pkt);
         }
 
-        NetstrapPacket otaUpgradeReq = NetstrapPacket.createOtaUpgradeReqPacket(300, new byte[] {1,2,3,4});
+        NetstrapPacket otaUpgradeReq = NetstrapPacket.createOtaUpgradeReqPacket(300, new byte[]{1, 2, 3, 4});
         System.out.println(otaUpgradeReq);
         dump(otaUpgradeReq.getBytes());
 
-        ls = NetstrapPacket.decodePacket(new byte[] {0x01, 0x11, 0x01, 0x00, 0x00});
+        ls = NetstrapPacket.decodePacket(new byte[]{0x01, 0x11, 0x01, 0x00, 0x00});
         for (NetstrapPacket pkt : ls) {
             System.out.println(pkt);
         }
 
-        NetstrapPacket otaRawDataReq = NetstrapPacket.createOtaRawDataReqPacket(new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+        NetstrapPacket otaRawDataReq = NetstrapPacket.createOtaRawDataReqPacket(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
         System.out.println(otaRawDataReq);
         dump(otaRawDataReq.getBytes());
 
@@ -1059,7 +972,7 @@ public class NetstrapPacket {
         System.out.println(otaEndReq);
         dump(otaEndReq.getBytes());
 
-        ls = NetstrapPacket.decodePacket(new byte[] {0x02, 0x11, 0x01, 0x00, 0x00});
+        ls = NetstrapPacket.decodePacket(new byte[]{0x02, 0x11, 0x01, 0x00, 0x00});
         for (NetstrapPacket pkt : ls) {
             System.out.println(pkt);
         }

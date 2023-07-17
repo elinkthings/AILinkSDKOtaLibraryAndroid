@@ -7,6 +7,9 @@ package com.elinkthings.bleotalibrary.config;
  */
 public class FlashConfig {
 
+    public final static String WATCH_NAME = "watch009";
+    public final static String CUSTOMIZE_WATCH_NAME = "bgp_w005";
+    public final static int MTU_MAX = 517;
     /**
      * 开始
      */
