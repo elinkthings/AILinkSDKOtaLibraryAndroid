@@ -53,8 +53,8 @@ makeJar.dependsOn(build)
 
 
 dependencies {
-//    implementation fileTree(dir: "libs", include: ["*.jar"])
-    implementation 'com.github.elinkthings:AILinkSDKRepositoryAndroid:1.13.10'
+    implementation fileTree(dir: "libs", include: ["*.jar"])
+    implementation 'com.github.elinkthings:AILinkSDKRepositoryAndroid:1.13.11'
 
     implementation files('libs/rtk-dfu-3.2.20.jar')
     implementation files('libs/rtk-core-1.1.7.jar')
