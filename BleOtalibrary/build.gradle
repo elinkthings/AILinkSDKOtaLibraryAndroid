@@ -10,7 +10,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 31
         versionCode 1
-        versionName "1.1.1"
+        versionName "1.1.2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -34,12 +34,6 @@ android {
         }
     }
 
-    repositories {
-        flatDir {
-            dirs 'libs'
-        }
-    }
-
 }
 
 def jarName="AILinkSDKOtaLibraryAndroid.jar"
@@ -54,19 +48,19 @@ makeJar.dependsOn(build)
 
 
 dependencies {
-    implementation fileTree(dir: "libs", include: ["*.jar"])
+    implementation fileTree(dir: "libs", include: ['*.jar','*.aar'])
     implementation 'com.github.elinkthings:AILinkSDKRepositoryAndroid:1.13.11'
 
     implementation files('libs/rtk-dfu-3.2.20.jar')
     implementation files('libs/rtk-core-1.1.7.jar')
     //杰理OTA库
-    implementation(name: 'jl_bt_ota_V1.9.2-release', ext: 'aar')
+    implementation files('libs/jl_bt_ota_V1.9.2-release.aar')
     //杰理rcsp基础库
-    implementation(name: 'jl_rcsp_V0.5.1-release', ext: 'aar')
+    implementation files('libs/jl_rcsp_V0.5.1-release.aar')
     //图像转换相关
-    implementation(name: 'BmpConvert_V1.2.0-release', ext: 'aar')
+    implementation files('libs/BmpConvert_V1.2.0-release.aar')
     //杰理健康相关
-    implementation(name: 'JL_Watch_V1.9.1-release', ext: 'aar')
+    implementation files('libs/JL_Watch_V1.9.1-release.aar')
 
 }
 
