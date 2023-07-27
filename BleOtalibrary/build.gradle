@@ -10,7 +10,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 31
         versionCode 1
-        versionName "1.1.2"
+        versionName "1.1.3"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -34,12 +34,19 @@ android {
         }
     }
 
+    //引入依赖路径
+    repositories {
+        flatDir {
+            dirs 'libs'
+        }
+    }
+
 }
 
 def jarName="AILinkSDKOtaLibraryAndroid.jar"
 task makeJar(type: Jar) {
     delete 'build/libs/'+jarName
-    from zipTree("build/intermediates/aar_main_jar/release/classes.jar")
+    from zipTree("build/intermediates/compile_library_classes_jar/release/classes.jar")
     from fileTree(dir: 'src/main/java') //需要保留的资源文件,源码等
     archiveName = jarName
     destinationDir = file('build/libs')
@@ -48,19 +55,19 @@ makeJar.dependsOn(build)
 
 
 dependencies {
-    implementation fileTree(dir: "libs", include: ['*.jar','*.aar'])
+    implementation fileTree(dir: "libs", include: ['*.jar'])
     implementation 'com.github.elinkthings:AILinkSDKRepositoryAndroid:1.13.11'
 
     implementation files('libs/rtk-dfu-3.2.20.jar')
     implementation files('libs/rtk-core-1.1.7.jar')
     //杰理OTA库
-    implementation files('libs/jl_bt_ota_V1.9.2-release.aar')
+    implementation(name: 'jl_bt_ota_V1.9.2-release', ext: 'aar')
     //杰理rcsp基础库
-    implementation files('libs/jl_rcsp_V0.5.1-release.aar')
+    implementation(name: 'jl_rcsp_V0.5.1-release', ext: 'aar')
     //图像转换相关
-    implementation files('libs/BmpConvert_V1.2.0-release.aar')
+    implementation(name: 'BmpConvert_V1.2.0-release', ext: 'aar')
     //杰理健康相关
-    implementation files('libs/JL_Watch_V1.9.1-release.aar')
+    implementation(name: 'JL_Watch_V1.9.1-release', ext: 'aar')
 
 }
 

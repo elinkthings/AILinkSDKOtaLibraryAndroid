@@ -23,6 +23,14 @@ android {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
+
+
+    //引入依赖路径
+    repositories {
+        flatDir {
+            dirs project(':BleOtalibrary').file('libs')
+        }
+    }
 }
 
 dependencies {
