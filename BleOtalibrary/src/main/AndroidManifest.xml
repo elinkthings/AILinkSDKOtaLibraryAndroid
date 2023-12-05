@@ -1,4 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.elinkthings.bleotalibrary">
 
+    <application>
+        <!-- declare DFU service -->
+        <service
+            android:name="com.realsil.sdk.dfu.DfuService"
+            android:exported="false"></service>
+    </application>
 </manifest>

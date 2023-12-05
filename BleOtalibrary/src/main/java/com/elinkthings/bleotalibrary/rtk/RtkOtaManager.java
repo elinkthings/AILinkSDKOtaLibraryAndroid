@@ -208,10 +208,10 @@ public class RtkOtaManager {
         } else {
             mDfuConfig.setFileIndicator(BinIndicator.INDICATOR_FULL);
         }
-        //        mDfuConfig.setFileIndicator();
+//        mDfuConfig.setFileIndicator();
         mDfuConfig.setOtaWorkMode(otaType);//默认升级模式
-        //        mDfuConfig.setOtaWorkMode(DfuConstants.OTA_MODE_NORMAL_FUNCTION);//默认升级模式
-        //        mDfuConfig.setOtaWorkMode(DfuConstants.OTA_MODE_SILENT_FUNCTION);//静默升级
+//        mDfuConfig.setOtaWorkMode(DfuConstants.OTA_MODE_NORMAL_FUNCTION);//默认升级模式
+//        mDfuConfig.setOtaWorkMode(DfuConstants.OTA_MODE_SILENT_FUNCTION);//静默升级
         mDfuConfig.setBufferCheckLevel(DfuConfig.BUFFER_CHECK_ORIGINAL);//分区检查
         mDfuConfig.setSpeedControlEnabled(false);//是否开启限速
         mDfuConfig.setControlSpeed(0);//速度
@@ -294,7 +294,7 @@ public class RtkOtaManager {
                     }
                 } else if (state == DfuConstants.PROGRESS_PENDING_ACTIVE_IMAGE) {
                     // 升级包发送完成,等待激活
-                    //                     mDfuAdapter.activeImage(true);//set true to active image and reset
+//                     mDfuAdapter.activeImage(true);//set true to active image and reset
 
                 } else {
                     if (mOnBleOTAListener != null) {
@@ -317,51 +317,51 @@ public class RtkOtaManager {
         }
     };
 
-    //    public static int getProgressStateResId(int var0) {
-    //        if (var0 != 527) {
-    //            switch (var0) {
-    //                case 257://准备升级
-    //                    return R.string.rtk_dfu_progress_state_origin;
-    //                case 258://固件激活成功
-    //                    return R.string.rtk_dfu_state_image_active_success;
-    //                case 259://已取消
-    //                    return R.string.rtk_dfu_state_aborted;
-    //                case 260://处理错误
-    //                    return R.string.rtk_dfu_state_error_processing;
-    //                default:
-    //                    switch (var0) {
-    //                        case 513://初始化
-    //                            return R.string.rtk_dfu_state_initialize;
-    //                        case 514://启动中
-    //                            return R.string.rtk_dfu_state_start;
-    //                        case 515:
-    //                        case 519://搜索设备
-    //                            return R.string.rtk_dfu_state_find_ota_remote;
-    //                        case 516:
-    //                        case 520://连接设备
-    //                            return R.string.rtk_dfu_state_connect_ota_remote;
-    //                        case 517://准备升级环境
-    //                            return R.string.rtk_dfu_state_prepare_dfu_processing;
-    //                        case 518://进入升级模式
-    //                            return R.string.rtk_dfu_state_remote_enter_ota;
-    //                        case 521://正在升级
-    //                            return R.string.rtk_dfu_state_start_ota_processing;
-    //                        case 522://正在HandOver
-    //                            return R.string.rtk_dfu_state_hand_over_processing;
-    //                        case 523://等待激活固件
-    //                            return R.string.rtk_dfu_state_pending_active_image;
-    //                        case 524://固件激活中
-    //                            return R.string.rtk_dfu_state_start_active_image;
-    //                        case 525://等待取消
-    //                            return R.string.rtk_dfu_state_abort_processing;
-    //                        default://未知
-    //                            return R.string.rtk_dfu_state_known;
-    //                    }
-    //            }
-    //        } else {
-    //            return R.string.rtk_dfu_state_scan_secondary_bud;
-    //        }
-    //    }
+//    public static int getProgressStateResId(int var0) {
+//        if (var0 != 527) {
+//            switch (var0) {
+//                case 257://准备升级
+//                    return R.string.rtk_dfu_progress_state_origin;
+//                case 258://固件激活成功
+//                    return R.string.rtk_dfu_state_image_active_success;
+//                case 259://已取消
+//                    return R.string.rtk_dfu_state_aborted;
+//                case 260://处理错误
+//                    return R.string.rtk_dfu_state_error_processing;
+//                default:
+//                    switch (var0) {
+//                        case 513://初始化
+//                            return R.string.rtk_dfu_state_initialize;
+//                        case 514://启动中
+//                            return R.string.rtk_dfu_state_start;
+//                        case 515:
+//                        case 519://搜索设备
+//                            return R.string.rtk_dfu_state_find_ota_remote;
+//                        case 516:
+//                        case 520://连接设备
+//                            return R.string.rtk_dfu_state_connect_ota_remote;
+//                        case 517://准备升级环境
+//                            return R.string.rtk_dfu_state_prepare_dfu_processing;
+//                        case 518://进入升级模式
+//                            return R.string.rtk_dfu_state_remote_enter_ota;
+//                        case 521://正在升级
+//                            return R.string.rtk_dfu_state_start_ota_processing;
+//                        case 522://正在HandOver
+//                            return R.string.rtk_dfu_state_hand_over_processing;
+//                        case 523://等待激活固件
+//                            return R.string.rtk_dfu_state_pending_active_image;
+//                        case 524://固件激活中
+//                            return R.string.rtk_dfu_state_start_active_image;
+//                        case 525://等待取消
+//                            return R.string.rtk_dfu_state_abort_processing;
+//                        default://未知
+//                            return R.string.rtk_dfu_state_known;
+//                    }
+//            }
+//        } else {
+//            return R.string.rtk_dfu_state_scan_secondary_bud;
+//        }
+//    }
 
 
     public interface OnRtkOtaInfoListener extends OnBleOTAListener {
