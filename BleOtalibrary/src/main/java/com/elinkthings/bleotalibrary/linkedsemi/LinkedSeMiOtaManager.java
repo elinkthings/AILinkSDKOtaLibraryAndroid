@@ -313,9 +313,11 @@ public class LinkedSeMiOtaManager implements OnCharacteristicListener {
         bytes[0] = 0x07;
         bytes[1] = 0x07;
         //表示OTA文件需要复制的大小,0表示使用源地址和目标地址去复制
-        bytes[2] = 0x00;
-        bytes[3] = 0x00;
-        bytes[4] = 0x00;
+        int numberOfBytes = (int) getFileSize(mFilePath);
+        bytes[2] = (byte) numberOfBytes;
+        bytes[3] = (byte) (numberOfBytes >> 8);
+        bytes[4] = (byte) (numberOfBytes >> 16);
+
         //源地址
         bytes[5] = 0x00;
         bytes[6] = (byte) 0x80;
