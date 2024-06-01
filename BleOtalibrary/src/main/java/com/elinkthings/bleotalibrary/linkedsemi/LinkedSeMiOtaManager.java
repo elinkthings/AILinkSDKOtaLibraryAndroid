@@ -213,7 +213,7 @@ public class LinkedSeMiOtaManager implements OnCharacteristicListener {
                     sendBlockInfo(++blockCounter);
                     lastChunkSent = false;
                 } else if (lastChunkSent && blockCounter == (fileUtils.getNumberOfBlocks() - 1)) {
-//                收完了，发送固件校验指令
+                    //收完了，发送固件校验指令
                     sendCheckResult();
                 } else {
                     sendBlockDates(blockCounter);
