@@ -1,0 +1,11 @@
+# 项目根目录创建 jitpack.yml
+jdk:
+  - openjdk11
+
+before_install:
+  - mkdir -p AILinkSDKOtaLibraryAndroid/libs
+  # 将您的 AAR 文件复制到正确位置（路径根据实际情况调整）
+  - cp AILinkSDKOtaLibraryAndroid/libs/*.aar AILinkSDKOtaLibraryAndroid/libs/
+
+install:
+  - ./gradlew :AILinkSDKOtaLibraryAndroid:clean :AILinkSDKOtaLibraryAndroid:generatePomFileForAarPublication

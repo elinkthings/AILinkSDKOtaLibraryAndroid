@@ -43,9 +43,9 @@ android {
 
 }
 
-def jarName="AILinkSDKOtaLibraryAndroid.jar"
+def jarName = "AILinkSDKOtaLibraryAndroid.jar"
 task makeJar(type: Jar) {
-    delete 'build/libs/'+jarName
+    delete 'build/libs/' + jarName
     from zipTree("build/intermediates/compile_library_classes_jar/release/classes.jar")
     from fileTree(dir: 'src/main/java') //需要保留的资源文件,源码等
     archiveName = jarName
@@ -74,10 +74,42 @@ afterEvaluate {
     publishing {
         publications {
             release(MavenPublication) {
-                from components.release
                 groupId = 'com.github.elinkthings'
                 artifactId = 'AILinkSDKOtaLibraryAndroid'
                 version = "1.1.9"
+
+                // 发布生成的 AAR 文件
+                artifact("$buildDir/outputs/aar/${project.name}-release.aar")
+                // 添加 AAR 依赖到 POM
+                pom.withXml {
+                    def dependenciesNode = asNode().appendNode('dependencies')
+
+                    // 为每个 AAR 依赖添加
+                    def jl_bt_ota = dependenciesNode.appendNode('dependency')
+                    jl_bt_ota.appendNode('groupId', "com.jieli")
+                    jl_bt_ota.appendNode('artifactId', "jl_bt_ota")
+                    jl_bt_ota.appendNode('version', "1.9.2")
+
+                    def jl_rcsp = dependenciesNode.appendNode('dependency')
+                    jl_rcsp.appendNode('groupId', "com.jieli")
+                    jl_rcsp.appendNode('artifactId', "jl_rcsp")
+                    jl_rcsp.appendNode('version', "0.5.1")
+
+                    def BmpConvert = dependenciesNode.appendNode('dependency')
+                    BmpConvert.appendNode('groupId', "com.jieli")
+                    BmpConvert.appendNode('artifactId', "BmpConvert")
+                    BmpConvert.appendNode('version', "1.2.0")
+
+                    def JL_Watch = dependenciesNode.appendNode('dependency')
+                    JL_Watch.appendNode('groupId', "com.jieli")
+                    JL_Watch.appendNode('artifactId', "JL_Watch")
+                    JL_Watch.appendNode('version', "1.9.1")
+
+                    def rtkOtaLib = dependenciesNode.appendNode('dependency')
+                    rtkOtaLib.appendNode('groupId', "com.jieli")
+                    rtkOtaLib.appendNode('artifactId', "rtkOtaLib")
+                    rtkOtaLib.appendNode('version', "1.0.0")
+                }
             }
         }
     }

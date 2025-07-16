@@ -1,2 +1,2 @@
-include ':BleOtalibrary'
+include ':AILinkSDKOtaLibraryAndroid'
 include ':app'

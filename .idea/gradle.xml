@@ -9,7 +9,7 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/BleOtalibrary" />
+            <option value="$PROJECT_DIR$/AILinkSDKOtaLibraryAndroid" />
             <option value="$PROJECT_DIR$/app" />
           </set>
         </option>
