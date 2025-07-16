@@ -88,35 +88,61 @@ afterEvaluate {
                 // 发布生成的 AAR 文件
 //                artifact("$buildDir/outputs/aar/${project.name}-release.aar")
                 from components.release
+
+                // 添加必要的 POM 元数据
+                pom {
+                    name = 'AILink SDK OTA Library'
+                    description = 'Bluetooth OTA library for Android'
+                    url = 'https://github.com/elinkthings/AILinkSDKOtaLibraryAndroid'
+
+                    licenses {
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            id = 'elinkthings'
+                            name = 'ElinkThings Team'
+                            email = 'app@elinkthings.com'
+                        }
+                    }
+                }
+
+
+
                 // 添加 AAR 依赖到 POM
                 pom.withXml {
-                    def dependenciesNode = asNode().appendNode('dependencies')
+                    def dependenciesNode = asNode().dependencies
+                    if (dependenciesNode.isEmpty()) {
+                        dependenciesNode = asNode().appendNode('dependencies')
+                    } else {
+                        dependenciesNode = dependenciesNode.get(0)
+                    }
 
-                    // 为每个 AAR 依赖添加
-                    def jl_bt_ota = dependenciesNode.appendNode('dependency')
-                    jl_bt_ota.appendNode('groupId', "com.jieli")
-                    jl_bt_ota.appendNode('artifactId', "jl_bt_ota")
-                    jl_bt_ota.appendNode('version', "1.9.2")
+                    // 确保只添加必要的依赖，避免重复
+                    // 添加 AAR 依赖
+                    def addDependency = { group, artifact, version, scope = 'runtime' ->
+                        def found = dependenciesNode.'*'.find {
+                            it.groupId.text() == group && it.artifactId.text() == artifact
+                        }
+                        if (!found) {
+                            def dependencyNode = dependenciesNode.appendNode('dependency')
+                            dependencyNode.appendNode('groupId', group)
+                            dependencyNode.appendNode('artifactId', artifact)
+                            dependencyNode.appendNode('version', version)
+                            dependencyNode.appendNode('scope', scope)
+                        }
+                    }
 
-                    def jl_rcsp = dependenciesNode.appendNode('dependency')
-                    jl_rcsp.appendNode('groupId', "com.jieli")
-                    jl_rcsp.appendNode('artifactId', "jl_rcsp")
-                    jl_rcsp.appendNode('version', "0.5.1")
-
-                    def BmpConvert = dependenciesNode.appendNode('dependency')
-                    BmpConvert.appendNode('groupId', "com.jieli")
-                    BmpConvert.appendNode('artifactId', "BmpConvert")
-                    BmpConvert.appendNode('version', "1.2.0")
-
-                    def JL_Watch = dependenciesNode.appendNode('dependency')
-                    JL_Watch.appendNode('groupId', "com.jieli")
-                    JL_Watch.appendNode('artifactId', "JL_Watch")
-                    JL_Watch.appendNode('version', "1.9.1")
-
-                    def rtkOtaLib = dependenciesNode.appendNode('dependency')
-                    rtkOtaLib.appendNode('groupId', "com.rtk")
-                    rtkOtaLib.appendNode('artifactId', "rtkOtaLib")
-                    rtkOtaLib.appendNode('version', "1.0.0")
+                    // 添加您的依赖项
+                    addDependency("com.jieli", "jl_bt_ota", "1.9.2")
+                    addDependency("com.jieli", "jl_rcsp", "0.5.1")
+                    addDependency("com.jieli", "BmpConvert", "1.2.0")
+                    addDependency("com.jieli", "JL_Watch", "1.9.1")
+                    addDependency("com.rtk", "rtkOtaLib", "1.0.0")
                 }
             }
         }
