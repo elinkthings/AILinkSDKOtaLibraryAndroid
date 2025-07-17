@@ -9,8 +9,8 @@ android {
     defaultConfig {
         minSdkVersion 21
         targetSdkVersion 34
-        versionCode 14
-        versionName "1.1.11"
+        versionCode 15
+        versionName "1.1.12"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -83,13 +83,10 @@ afterEvaluate {
             release(MavenPublication) {
                 groupId = 'com.github.elinkthings'
                 artifactId = 'AILinkSDKOtaLibraryAndroid'
-                version = "1.1.11"
+                version = "1.1.12" // 建议升级版本号
 
-                // 发布生成的 AAR 文件
-//                artifact("$buildDir/outputs/aar/${project.name}-release.aar")
                 from components.release
 
-                // 添加必要的 POM 元数据
                 pom {
                     name = 'AILink SDK OTA Library'
                     description = 'Bluetooth OTA library for Android'
@@ -111,10 +108,9 @@ afterEvaluate {
                     }
                 }
 
-
-
-                // 添加 AAR 依赖到 POM
+                // 修复后的依赖声明
                 pom.withXml {
+                    // 完全清除自动生成的依赖
                     def dependenciesNode = asNode().dependencies
                     if (dependenciesNode.isEmpty()) {
                         dependenciesNode = asNode().appendNode('dependencies')
@@ -122,27 +118,24 @@ afterEvaluate {
                         dependenciesNode = dependenciesNode.get(0)
                     }
 
-                    // 确保只添加必要的依赖，避免重复
-                    // 添加 AAR 依赖
-                    def addDependency = { group, artifact, version, scope = 'runtime' ->
-                        def found = dependenciesNode.'*'.find {
-                            it.groupId.text() == group && it.artifactId.text() == artifact
-                        }
-                        if (!found) {
-                            def dependencyNode = dependenciesNode.appendNode('dependency')
-                            dependencyNode.appendNode('groupId', group)
-                            dependencyNode.appendNode('artifactId', artifact)
-                            dependencyNode.appendNode('version', version)
-                            dependencyNode.appendNode('scope', scope)
-                        }
+                    // 手动添加所有必要依赖
+                    def addDependency = { groupId, artifactId, version, scope = 'runtime' ->
+                        def dependencyNode = dependenciesNode.appendNode('dependency')
+                        dependencyNode.appendNode('groupId', groupId)
+                        dependencyNode.appendNode('artifactId', artifactId)
+                        dependencyNode.appendNode('version', version)
+                        dependencyNode.appendNode('scope', scope)
                     }
 
-                    // 添加您的依赖项
-                    addDependency("com.jieli", "jl_bt_ota", "1.9.2")
-                    addDependency("com.jieli", "jl_rcsp", "0.5.1")
-                    addDependency("com.jieli", "BmpConvert", "1.2.0")
-                    addDependency("com.jieli", "JL_Watch", "1.9.1")
-                    addDependency("com.rtk", "rtkOtaLib", "1.0.0")
+                    // 添加主依赖
+                    addDependency('com.github.elinkthings', 'AILinkSDKRepositoryAndroid', '1.15.01')
+
+                    // 添加本地AAR依赖
+                    addDependency('com.jieli', 'jl_bt_ota', '1.9.2')
+                    addDependency('com.jieli', 'jl_rcsp', '0.5.1')
+                    addDependency('com.jieli', 'BmpConvert', '1.2.0')
+                    addDependency('com.jieli', 'JL_Watch', '1.9.1')
+                    addDependency('com.rtk', 'rtkOtaLib', '1.0.0')
                 }
             }
         }
