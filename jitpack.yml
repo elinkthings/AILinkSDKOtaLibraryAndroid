@@ -1,5 +1,4 @@
 jdk:
   - openjdk11
-
-install:
-  - ./gradlew :AILinkSDKOtaLibraryAndroid:publishReleasePublicationToMavenLocal
+before_install:
+  - chmod +x gradlew

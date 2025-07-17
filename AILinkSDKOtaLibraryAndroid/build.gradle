@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.library'
     id 'maven-publish'
+    id 'com.kezong.fat-aar'
 }
 
 android {
@@ -48,6 +49,10 @@ android {
         }
     }
 
+    packagingOptions {
+        exclude 'META-INF/*.kotlin_module'
+    }
+
 }
 
 def jarName = "AILinkSDKOtaLibraryAndroid.jar"
@@ -60,21 +65,34 @@ task makeJar(type: Jar) {
 }
 makeJar.dependsOn(build)
 
+task sourceJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier "sources"
+}
 
 dependencies {
 //    implementation fileTree(dir: "libs", include: ['*.jar'])
     implementation 'com.github.elinkthings:AILinkSDKRepositoryAndroid:1.15.01'
 
-    //杰理OTA库
-    implementation(name: 'jl_bt_ota_V1.9.2-release', ext: 'aar')
-    //杰理rcsp基础库
-    implementation(name: 'jl_rcsp_V0.5.1-release', ext: 'aar')
-    //图像转换相关
-    implementation(name: 'BmpConvert_V1.2.0-release', ext: 'aar')
-    //杰理健康相关
-    implementation(name: 'JL_Watch_V1.9.1-release', ext: 'aar')
-    implementation(name: 'rtkOtaLib-release', ext: 'aar')
+//    //杰理OTA库
+//    implementation(name: 'jl_bt_ota_V1.9.2-release', ext: 'aar')
+//    //杰理rcsp基础库
+//    implementation(name: 'jl_rcsp_V0.5.1-release', ext: 'aar')
+//    //图像转换相关
+//    implementation(name: 'BmpConvert_V1.2.0-release', ext: 'aar')
+//    //杰理健康相关
+//    implementation(name: 'JL_Watch_V1.9.1-release', ext: 'aar')
+//    implementation(name: 'rtkOtaLib-release', ext: 'aar')
 
+    //杰理OTA库
+    embed(name: 'jl_bt_ota_V1.9.2-release', ext: 'aar')
+    //杰理rcsp基础库
+    embed(name: 'jl_rcsp_V0.5.1-release', ext: 'aar')
+    //图像转换相关
+    embed(name: 'BmpConvert_V1.2.0-release', ext: 'aar')
+    //杰理健康相关
+    embed(name: 'JL_Watch_V1.9.1-release', ext: 'aar')
+    embed(name: 'rtkOtaLib-release', ext: 'aar')
 }
 
 afterEvaluate {
@@ -84,29 +102,32 @@ afterEvaluate {
                 groupId = 'com.github.elinkthings'
                 artifactId = 'AILinkSDKOtaLibraryAndroid'
                 version = "1.1.13" // 建议升级版本号
-
-                from components.release
-
-                pom {
-                    name = 'AILink SDK OTA Library'
-                    description = 'Bluetooth OTA library for Android'
-                    url = 'https://github.com/elinkthings/AILinkSDKOtaLibraryAndroid'
-
-                    licenses {
-                        license {
-                            name = 'The Apache License, Version 2.0'
-                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                        }
-                    }
-
-                    developers {
-                        developer {
-                            id = 'elinkthings'
-                            name = 'ElinkThings Team'
-                            email = 'app@elinkthings.com'
-                        }
-                    }
-                }
+                // 主AAR文件
+                artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
+                // 源码Jar（可选但推荐）
+                artifact sourceJar
+//                from components.release
+//
+//                pom {
+//                    name = 'AILink SDK OTA Library'
+//                    description = 'Bluetooth OTA library for Android'
+//                    url = 'https://github.com/elinkthings/AILinkSDKOtaLibraryAndroid'
+//
+//                    licenses {
+//                        license {
+//                            name = 'The Apache License, Version 2.0'
+//                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+//                        }
+//                    }
+//
+//                    developers {
+//                        developer {
+//                            id = 'elinkthings'
+//                            name = 'ElinkThings Team'
+//                            email = 'app@elinkthings.com'
+//                        }
+//                    }
+//                }
 
                 // 修复后的依赖声明
 //                pom.withXml {
